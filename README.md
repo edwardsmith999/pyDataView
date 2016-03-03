@@ -6,7 +6,7 @@ Data can be explored as a matplotlib lineplot or contour using sliders to traver
 For more detailed analysis, a figure can be saved, the data output as a csv file or a minimal python script generated.
 The emphesis of this project is the provision of a simple reader to get data into python, a minimal GUI to get quick insight into that data and generation of python scripts for more detailed analysis. 
 
-# Quickstart
+## Quickstart
 
 pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimenionality of data.
 Currently, support is provided for field data written by a number of binary format MPI/fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. To use pyDataView, from the command line, simply point it at directory which contains the data,
