@@ -12,4 +12,4 @@ Any files which can be converted to fields are displayed on the left hand side.
 
 
 
-![alt tag](https://raw.githubusercontent.com/username/projectname/branch/path/to/img.png)
+![alt tag](https://raw.githubusercontent.com/edwardsmith999/pyDataView/master/pyDataView_screenshot.png)
