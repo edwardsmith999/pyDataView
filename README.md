@@ -4,12 +4,12 @@ Data Viewer GUI written in python, wxpython and matplotlib.
 This is a lightweight interface for quick insight into scientific data.
 Data can be explored as a matplotlib lineplot or contour using sliders to traverse the range of existing records and bins.
 For more detailed analysis, a figure can be saved, the data output as a csv file or a minimal python script generated.
-The emphesis of this project is the provision of a simple reader to get data into python, a minimal GUI to get quick insight into that data and generation of python scripts for more detailed analysis. 
+The emphasis of this project is the provision of a simple reader to get data into python, a minimal GUI to get quick insight into that data and generation of python scripts for more detailed analysis. 
 
 ## Quickstart
 
-pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimenionality of data.
-Currently, support is provided for field data written by a number of binary format MPI/fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. To use pyDataView, from the command line, simply point it at directory which contains the data,
+pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
+Currently, support is provided for field data written by a number of binary format MPI/Fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. To use pyDataView, from the command line, simply point it at directory which contains the data,
 
     pyDataView.py -d ./path/to/dir
     
@@ -20,7 +20,7 @@ Any files which can be converted to fields are displayed on the left hand side.
 
 As well as the raw data fields, derived fields are also supported, for example, dividing momentum by density to get velocity.
 
-If the code/datatype is already supported, all avilable data should be displayed.
+If the code/datatype is already supported, all available data should be displayed.
 In order to add new datatypes, the user must create a raw data reader in `newreader.py`,
 
 ```python
@@ -69,7 +69,7 @@ class SomeNewVectorField(Field):
         self.axislabels = ['x','y','z']
 
 ````
-This field type can now be called in any python script, allowing 5D data fields to be read as well as data preperation for plots, including profiles, contours, fft, etc. To add these new fields to the GUI, they should be added to `newpostproc.py`
+This field type can now be called in any python script, allowing 5D data fields to be read as well as data preparation for plots, including profiles, contours, fft, etc. To add these new fields to the GUI, they should be added to `newpostproc.py`
 
 ```python
 
