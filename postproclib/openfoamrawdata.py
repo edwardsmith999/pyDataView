@@ -7,15 +7,21 @@ from pplexceptions import DataNotAvailable
 
 class OpenFOAM_RawData(RawData):
     
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname, nperbin):
 
         if (fdir[-1] != '/'): fdir += '/'
         self.fdir = fdir
+        self.procxyz = self.get_proc_topology()
+        self.procs = int(np.product(self.procxyz))
+        if self.procs != 1:
+            self.parallel_run = True
+        else:
+            self.parallel_run = False
         self.grid = self.get_grid()
         self.reclist = self.get_reclist()
         self.maxrec = len(self.reclist) - 1 # count from 0
         self.fname = fname
-        self.npercell = self.get_npercell()
+        self.npercell = nperbin #self.get_npercell()
         self.nu = self.get_nu()
         self.header = None
 
@@ -35,7 +41,12 @@ class OpenFOAM_RawData(RawData):
     def get_npercell(self):
 
         # Read first record (reclist[0]) as example 
-        fpath = self.fdir+self.reclist[0]+self.fname 
+        if self.parallel_run:
+            fpath = self.fdir+"/processor0/"+self.reclist[0]+self.fname
+        else:
+            fpath = self.fdir+self.reclist[0]+self.fname 
+        #E.S. THIS DOES NOT WORK FOR PRESSURE (OR ANYTHING WITH 1 PER CELL)
+        #(ALSO WHY DO WE NEED THIS?)
         with open(fpath, 'r') as f:
             while True:
                 line = f.readline()
@@ -56,14 +67,19 @@ class OpenFOAM_RawData(RawData):
                           ) 
         return array
 
-    def reshape_list_to_cells(self, inputlist, npercell):
+    def reshape_list_to_cells(self, inputlist, npercell, glob=False):
         # Lists from OpenFOAM seem to be written in Fortran order, for some
         # reason
-        array = np.reshape(
-                           inputlist, 
-                           (self.ncx, self.ncy, self.ncz, npercell), 
-                           order='F'
-                          ) 
+        if glob:
+            array = np.reshape(inputlist, 
+                               (int(self.ncx), int(self.ncy), int(self.ncz), 
+                                npercell), order='F') 
+        else:
+            array = np.reshape(inputlist, 
+                               (int(self.ncx/float(self.procxyz[0])), 
+                                int(self.ncy/float(self.procxyz[1])), 
+                                int(self.ncz/float(self.procxyz[2])), 
+                                npercell), order='F') 
         return array
 
     def read_list(self, fobj):
@@ -90,6 +106,8 @@ class OpenFOAM_RawData(RawData):
                 if line[0] == '(' and ')' in line:
                     values = line.split('(')[-1].split(')')[0].split()
                     herelist.append([float(i) for i in values])
+                else:
+                    herelist.append(float(line))
 
             checkclosebracket = fobj.next()
             if (checkclosebracket[0] != ')'):
@@ -97,12 +115,90 @@ class OpenFOAM_RawData(RawData):
     
             return herelist
             
+        # Find entryname
         for line in fobj:
             if (entryname in line):
-                flist = read_list_from_here(fobj)
+                if "nonuniform List" in line:
+                    flist = read_list_from_here(fobj)
+                    return flist
+                elif " uniform 0" in line:
+                    flist = [0]
+                    return flist
+                else:
+                    # Else check for fixed values or skip next
+                    # 4 lines until start of list<vector>
+                    for count in range(5):
+                        nline = fobj.next()
+
+                        if " uniform" in nline:
+                            flist = nline.split("(")[1].split(")")[0].split(" ") 
+                            #print(entryname, " is fixed value in file", flist)
+                            return flist
+    
+                        elif "nonuniform List" in nline:
+                            flist = read_list_from_here(fobj)
+                            return flist
+
+        return []
+
+
+    def read_cells(self, fobj, ncells):
+
+
+        def read_list(fobj, nitems):
+
+            checkopenbracket = fobj.next()
+            if (checkopenbracket[0] != '('):
+                raise
+
+            herelist = []
+            for lineno in range(nitems):
+                line = fobj.next()
+                herelist.append(float(line))
+
+            checkclosebracket = fobj.next()
+            if (checkclosebracket[0] != ')'):
+                raise
+    
+            return herelist
+
+        entryname = str(ncells)
+        for line in fobj:
+            if (entryname in line):
+                flist = read_list(fobj, ncells)
 
         return flist
-    
+
+
+    def get_proc_topology(self):
+
+        """
+            OpenFOAM processor topology
+        """
+
+        # Try to get grid shape (linear)
+        try:
+            fobj = open(self.fdir+'/system/decomposeParDict','r')
+        except IOError:
+            raise DataNotAvailable
+
+        alltxt = fobj.readlines()
+        for n,line in enumerate(alltxt):
+            if line[0:12] == 'simpleCoeffs':
+                procentry = alltxt[n+2]
+                procstr = (procentry.split('(')[1]
+                           .replace(')','')
+                           .replace(';','')
+                           .split())
+                break
+
+        #Convert to int array
+        procsxyz = np.empty(3)
+        for i in range(len(procstr)):
+            procsxyz[i]= procstr[i]
+
+        return procsxyz
+
     def get_grid(self):
 
         """
@@ -124,6 +220,7 @@ class OpenFOAM_RawData(RawData):
                 break
 
         # Number of grid points is 1 more than number of cells
+        #self.ngx = int(int(nxyz[0])/float(self.procxyz[0])) + 1
         self.ngx = int(nxyz[0]) + 1 
         self.ngy = int(nxyz[1]) + 1
         self.ngz = int(nxyz[2]) + 1
@@ -152,6 +249,45 @@ class OpenFOAM_RawData(RawData):
         self.yL = points[dummy,-1,dummy,y] - points[dummy,0,dummy,y]
         self.zL = points[dummy,dummy,-1,z] - points[dummy,dummy,0,z]
 
+        #Get size of grid on each processor
+        if self.parallel_run:
+            self.minx = np.empty(self.procs)
+            self.maxx = np.empty(self.procs)
+            self.miny = np.empty(self.procs)
+            self.maxy = np.empty(self.procs)
+            self.minz = np.empty(self.procs)
+            self.maxz = np.empty(self.procs)
+            self.cellmap = []
+            for proc in range(self.procs):
+                fdir = self.fdir+"processor" + str(proc) + "/"
+                fpath = fdir + "/constant/polyMesh/cellProcAddressing"
+                with open(fpath,'r') as fobj:
+                    nperprocx = int(self.ncx/float(self.procxyz[0]))
+                    nperprocy = int(self.ncy/float(self.procxyz[1]))
+                    nperprocz = int(self.ncz/float(self.procxyz[2]))
+                    celllist = self.read_cells(fobj, nperprocx*nperprocy*nperprocz)
+                    #Mapping from local to global cells
+                    self.cellmap.append(celllist)
+
+                    #Keep min/max process method to get halos
+                    ctemp = self.reshape_list_to_cells(celllist, 1)
+
+                # This will only work for proc decompositions in x
+                # I have no idea how OpenFOAM maps 3D processor
+                # layouts to processor folder naming in general
+                # Here we use current processor topology 
+                # THIS DOES NOT WORK WITH VARIABLE Z PROCESSORS!!!!!!!!!!!
+                self.minx[proc] = ctemp[0,0,0,0]    #Minimum index in domain
+                self.maxx[proc] = np.max(ctemp[:,0,0,0])+1  # Maximum index in x
+                # Minimum index in y, minus minx and in blocks of x dimension
+                self.miny[proc] = np.min(ctemp[0,:,0,0]-self.minx[proc])/ctemp.shape[0] 
+                self.maxy[proc] = np.max(ctemp[0,:,0,0]-self.minx[proc])/ctemp.shape[0]+1
+                # Minimum index in z, minus minx and in blocks of x*y dimension
+                self.minz[proc] = np.min(ctemp[0,0,:,0]-self.minx[proc])/(ctemp.shape[0]*ctemp.shape[1]) 
+                self.maxz[proc] = np.max(ctemp[0,0,:,0]-self.minx[proc])/(ctemp.shape[0]*ctemp.shape[1])+1
+                # THIS DOES NOT WORK WITH VARIABLE Z PROCESSORS!!!!!!!!!!!
+
+                #print(proc, self.minx[proc],self.maxx[proc],self.miny[proc],self.maxy[proc],self.minz[proc],self.maxz[proc],nperprocx,nperprocy,nperprocz,ctemp.shape)
         # Return list of cell-centre locations in each direction
         gridx = np.linspace(self.dx/2., self.xL - self.dx/2., num=self.ncx)
         gridy = np.linspace(self.dy/2., self.yL - self.dy/2., num=self.ncy)
@@ -161,39 +297,84 @@ class OpenFOAM_RawData(RawData):
 
         return grid 
 
-    def get_reclist(self):
-
-        def get_float(name):
-            return float(name)
+    def get_reclist(self, skip_inital=False):
 
         records = []
-        for filename in os.listdir(self.fdir):
-            try:
-                rectime = float(filename)
-                records.append(filename)
-            except ValueError:
-                print('Ignoring folder '+self.fdir+filename)
+        def get_float(name):
+            return float(name)
+        def get_records(fdir):
+
+            for filename in os.listdir(fdir):
+                try:
+                    rectime = float(filename)
+                    records.append(filename)
+                except ValueError:
+                    print('Ignoring folder '+fdir+filename)
+
+            return records
+
+        if self.parallel_run:
+            for proc in range(self.procs):
+                fdir = self.fdir+"processor" + str(proc)
+                records = get_records(fdir)
+        else:
+            records = get_records(self.fdir)
+
+        #If only initial field data found, raise error
+        if (records == [] or records == ['0']):
+            raise DataNotAvailable
        
         records = sorted(records, key=get_float)
         # Ignore initial field stored in folder "0" 
-        return [rectime+'/' for rectime in records[1:]]
+        if skip_inital:
+            return [rectime+'/' for rectime in records[1:]]
+        else:
+            return [rectime+'/' for rectime in records[:]]
 
     def read(self, startrec, endrec, binlimits=None, verbose=False, **kwargs):
 
         nrecs = endrec - startrec + 1
 
         # Allocate storage (despite ascii read!)
-        odata = np.empty((self.ncx,self.ncy,self.ncz,nrecs,self.npercell))
+        odata = np.zeros((self.ncx,self.ncy,self.ncz,nrecs,self.npercell))
 
         # Loop through files and insert data
         for plusrec in range(0,nrecs):
 
-            fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
-            with open(fpath,'r') as fobj:
-                vlist = self.read_list_named_entry(fobj, 'internalField')
-                vtemp = self.reshape_list_to_cells(vlist, self.npercell)
+            if self.parallel_run:
+                olist = np.zeros([self.ncx*self.ncy*self.ncz*nrecs,self.npercell])
+                for proc in range(self.procs):
+                    fdir = self.fdir+"processor" + str(proc) + "/"
+                    fpath = fdir + self.reclist[startrec+plusrec] + self.fname
 
-            odata[:,:,:,plusrec,:] = vtemp 
+                    with open(fpath,'r') as fobj:
+                        vlist = self.read_list_named_entry(fobj, 'internalField')
+                        #Case when field is constant has a single value
+                        if len(vlist) is self.npercell:
+                            for dim in range(self.npercell):
+                                odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                        else:
+                            # Loop through cellProcAddress mapping and assign
+                            # values to global cells
+                            for i in range(len(vlist)):
+                                olist[int(self.cellmap[proc][i]),:] = vlist[i]
+
+                    #Reshape global list to cells
+                    vtemp = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
+                    odata[:,:,:,plusrec,:] = vtemp
+
+            else:
+                fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
+                with open(fpath,'r') as fobj:
+                    vlist = self.read_list_named_entry(fobj, 'internalField')
+                    #Case when field is constant has a single value
+                    if len(vlist) is self.npercell:
+                        for dim in range(self.npercell):
+                            odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                    else:
+                        vtemp = self.reshape_list_to_cells(vlist, self.npercell)
+
+                odata[:,:,:,plusrec,:] = vtemp 
                 
         # If bin limits are specified, return only those within range
         if (binlimits):
@@ -216,5 +397,57 @@ class OpenFOAM_RawData(RawData):
             odata = odata[lower[0]:upper[0],
                           lower[1]:upper[1],
                           lower[2]:upper[2], :, :]
+        return odata
+
+    def read_halo(self, startrec, endrec, **kwargs):
+
+
+        print( "Warning -- there is no processor to cell mapping \n"
+              +"           for halo cells so these are obtained  \n"
+              +"           by assuming fixed domain size")
+
+        nrecs = endrec - startrec + 1
+
+        # Allocate storage (despite ascii read!)
+        odata = np.empty((self.ncx,1,self.ncz,nrecs,self.npercell))
+
+        # Loop through files and insert data
+        for plusrec in range(0,nrecs):
+
+            if self.parallel_run:
+                for proc in range(self.procs):
+                    fdir = self.fdir+"processor" + str(proc) + "/"
+                    fpath = fdir + self.reclist[startrec+plusrec] + self.fname
+
+                    with open(fpath,'r') as fobj:
+                        #Skip to line with cplrecvMD
+                        vlist = self.read_list_named_entry(fobj, "CPLReceiveMD")
+                        if len(vlist) is self.npercell:
+                            for dim in range(self.npercell):
+                                odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                        else:
+                            vtemp = np.reshape(
+                                               vlist, 
+                                               (int(self.ncx/float(self.procxyz[0])), 
+                                                1, 
+                                                int(self.ncz/float(self.procxyz[2])), 
+                                                self.npercell), 
+                                                order='F'
+                                              )
+
+                            #Use processor extents to slot into array
+                            odata[self.minx[proc]:self.maxx[proc], 0:1,
+                                  self.minz[proc]:self.maxz[proc],plusrec,:] = vtemp
+
+            else:
+                fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
+                with open(fpath,'r') as fobj:
+                    vlist = self.read_list_named_entry(fobj, 'internalField')
+                    if len(vlist) is self.npercell:
+                        for dim in range(self.npercell):
+                            odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                    else:
+                        vtemp = self.reshape_list_to_cells(vlist, self.npercell)
+                        odata[:,0:1,:,plusrec,:] = vtemp
          
         return odata

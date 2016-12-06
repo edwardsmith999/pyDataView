@@ -358,6 +358,11 @@ class MD_PostProc(PostProc):
             except DataMismatch:
                 pass
 
+            try:
+                T1 = MD_TField(self.resultsdir, peculiar=False, **kwargs)
+                self.plotlist.update({'T_peculiar':T1})
+            except DataMismatch:
+                pass
             #Derivative of temperature heatflux
             try:
                 T1 = MD_dTdrField(self.resultsdir, **kwargs)

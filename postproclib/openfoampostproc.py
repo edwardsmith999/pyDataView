@@ -25,7 +25,8 @@ class OpenFOAM_PostProc(PostProc):
         except IOError:
             raise NoResultsInDir
 
-        possibles = {'OpenFOAM Velocity': OpenFOAM_vField}
+        possibles = {'U': OpenFOAM_vField, 
+                     'P': OpenFOAM_PField}
 
         self.plotlist = {}
         for key, field in possibles.items(): 

@@ -12,7 +12,7 @@ class OpenFOAMField(Field):
     nhalos = [0, 0, 0]
 
     def __init__(self, fdir, fname):
-        Raw = OpenFOAM_RawData(fdir, fname)
+        Raw = OpenFOAM_RawData(fdir, fname, self.nperbin)
         Field.__init__(self, Raw)
         self.axislabels = ['x','y','z']
         self.plotfreq = 1
