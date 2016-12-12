@@ -25,19 +25,6 @@ class OpenFOAM_RawData(RawData):
         self.nu = self.get_nu()
         self.header = None
 
-    def get_nu(self):
-
-        # Read constant transport properties file 
-        fpath = self.fdir+'constant/transportProperties'
-        with open(fpath, 'r') as f:
-            while True:
-                line = f.readline()
-                if (line[0:2] == 'nu'):
-                    break
-            nu = float(line.split(']')[-1].split(';')[0]) 
-        
-        return nu
-    
     def get_npercell(self):
 
         # Read first record (reclist[0]) as example 
@@ -272,6 +259,7 @@ class OpenFOAM_RawData(RawData):
                     #Keep min/max process method to get halos
                     ctemp = self.reshape_list_to_cells(celllist, 1)
 
+                print(proc, np.min(ctemp), np.max(ctemp))
                 # This will only work for proc decompositions in x
                 # I have no idea how OpenFOAM maps 3D processor
                 # layouts to processor folder naming in general
@@ -315,7 +303,7 @@ class OpenFOAM_RawData(RawData):
 
         if self.parallel_run:
             for proc in range(self.procs):
-                fdir = self.fdir+"processor" + str(proc)
+                fdir = self.fdir+"processor" + str(proc) + "/"
                 records = get_records(fdir)
         else:
             records = get_records(self.fdir)
@@ -342,7 +330,7 @@ class OpenFOAM_RawData(RawData):
         for plusrec in range(0,nrecs):
 
             if self.parallel_run:
-                olist = np.zeros([self.ncx*self.ncy*self.ncz*nrecs,self.npercell])
+                olist = np.zeros([self.ncx*self.ncy*self.ncz,self.npercell])
                 for proc in range(self.procs):
                     fdir = self.fdir+"processor" + str(proc) + "/"
                     fpath = fdir + self.reclist[startrec+plusrec] + self.fname
@@ -401,15 +389,16 @@ class OpenFOAM_RawData(RawData):
 
     def read_halo(self, startrec, endrec, **kwargs):
 
-
-        print( "Warning -- there is no processor to cell mapping \n"
-              +"           for halo cells so these are obtained  \n"
-              +"           by assuming fixed domain size")
+        """
+            Warning -- there is no processor to cell 
+            mapping for halo cells so these are obtained
+            by assuming fixed domain size
+        """
 
         nrecs = endrec - startrec + 1
 
         # Allocate storage (despite ascii read!)
-        odata = np.empty((self.ncx,1,self.ncz,nrecs,self.npercell))
+        odata = np.empty((self.ncx, 1, self.ncz,nrecs, self.npercell))
 
         # Loop through files and insert data
         for plusrec in range(0,nrecs):
@@ -426,18 +415,25 @@ class OpenFOAM_RawData(RawData):
                             for dim in range(self.npercell):
                                 odata[:,:,:,plusrec,dim] = float(vlist[dim])
                         else:
-                            vtemp = np.reshape(
-                                               vlist, 
-                                               (int(self.ncx/float(self.procxyz[0])), 
-                                                1, 
-                                                int(self.ncz/float(self.procxyz[2])), 
-                                                self.npercell), 
-                                                order='F'
-                                              )
+                            npx = self.procxyz[0]
+                            npz = self.procxyz[2]
+                            nx = int(self.ncx/float(npx))
+                            nz = int(self.ncx/float(npz))
+                            vtemp = np.reshape(vlist, (nx, 1, nz, self.npercell), order='F')
+
+                            #Assume it must be slip as function of x and z only
+#                            minx = proc%npx*nx
+#                            maxx = (proc%npx+1)*nx
+#                            minz = np.floor(proc/npx)*nz
+#                            maxz = np.floor(proc/npx+1)*nz
+
+                            minx = np.floor(proc/npx)*nz
+                            maxx = np.floor(proc/npx+1)*nz
+                            minz = proc%npx*nx
+                            maxz = (proc%npx+1)*nx
 
                             #Use processor extents to slot into array
-                            odata[self.minx[proc]:self.maxx[proc], 0:1,
-                                  self.minz[proc]:self.maxz[proc],plusrec,:] = vtemp
+                            odata[minx:maxx, 0:1, minz:maxz, plusrec, :] = vtemp
 
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
@@ -451,3 +447,18 @@ class OpenFOAM_RawData(RawData):
                         odata[:,0:1,:,plusrec,:] = vtemp
          
         return odata
+
+
+    def get_nu(self):
+
+        # Read constant transport properties file 
+        fpath = self.fdir+'constant/transportProperties'
+        with open(fpath, 'r') as f:
+            while True:
+                line = f.readline()
+                if (line[0:2] == 'nu'):
+                    break
+            nu = float(line.split(']')[-1].split(';')[0]) 
+        
+        return nu
+    

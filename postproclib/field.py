@@ -65,6 +65,17 @@ class Field():
 
         grid_data = self.Raw.read(startrec,endrec,**kwargs)
         return grid_data
+
+
+    def read_halo(self,startrec,endrec,**kwargs):
+
+        """
+            Method to read halo if Raw data reader supports it.          
+        """
+        try:
+           return self.Raw.read_halo(startrec,endrec,**kwargs)
+        except AttributeError:
+            raise
     
     def averaged_data(self,startrec,endrec,avgaxes=(),**kwargs):
 
