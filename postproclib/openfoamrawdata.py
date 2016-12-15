@@ -259,7 +259,6 @@ class OpenFOAM_RawData(RawData):
                     #Keep min/max process method to get halos
                     ctemp = self.reshape_list_to_cells(celllist, 1)
 
-                print(proc, np.min(ctemp), np.max(ctemp))
                 # This will only work for proc decompositions in x
                 # I have no idea how OpenFOAM maps 3D processor
                 # layouts to processor folder naming in general
@@ -277,9 +276,9 @@ class OpenFOAM_RawData(RawData):
 
                 #print(proc, self.minx[proc],self.maxx[proc],self.miny[proc],self.maxy[proc],self.minz[proc],self.maxz[proc],nperprocx,nperprocy,nperprocz,ctemp.shape)
         # Return list of cell-centre locations in each direction
-        gridx = np.linspace(self.dx/2., self.xL - self.dx/2., num=self.ncx)
-        gridy = np.linspace(self.dy/2., self.yL - self.dy/2., num=self.ncy)
-        gridz = np.linspace(self.dz/2., self.zL - self.dz/2., num=self.ncz)
+        gridx = np.linspace(self.dx/2., self.xL-self.dx/2., num=self.ncx)
+        gridy = np.linspace(self.dy/2., self.yL-self.dy/2., num=self.ncy)
+        gridz = np.linspace(self.dz/2., self.zL-self.dz/2., num=self.ncz)
         
         grid = [gridx,gridy,gridz]
 
@@ -287,31 +286,26 @@ class OpenFOAM_RawData(RawData):
 
     def get_reclist(self, skip_inital=False):
 
-        records = []
-        def get_float(name):
-            return float(name)
-        def get_records(fdir):
-
-            for filename in os.listdir(fdir):
-                try:
-                    rectime = float(filename)
-                    records.append(filename)
-                except ValueError:
-                    print('Ignoring folder '+fdir+filename)
-
-            return records
-
+        #Read only one of the processor outputs assuming same in each
         if self.parallel_run:
-            for proc in range(self.procs):
-                fdir = self.fdir+"processor" + str(proc) + "/"
-                records = get_records(fdir)
+            fdir = self.fdir+"/processor0/"
         else:
-            records = get_records(self.fdir)
+            fdir = self.fdir
+
+        records = []
+        for filename in os.listdir(fdir):
+            try:
+                rectime = float(filename)
+                records.append(filename)
+            except ValueError:
+                pass
 
         #If only initial field data found, raise error
-        if (records == [] or records == ['0']):
+        if (records == []):# or records == ['0']):
             raise DataNotAvailable
        
+        def get_float(name):
+            return float(name)
         records = sorted(records, key=get_float)
         # Ignore initial field stored in folder "0" 
         if skip_inital:
