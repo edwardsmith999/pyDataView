@@ -3,6 +3,8 @@ import numpy as np
 import scipy.ndimage
 import scipy.interpolate as interp
 import scipy.ndimage.interpolation as interp2
+from scipy.ndimage import map_coordinates
+from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import sys
 
@@ -80,7 +82,7 @@ class Field():
     def averaged_data(self,startrec,endrec,avgaxes=(),**kwargs):
 
         """
-            TO BE OVERRIDDEN IN COMPLICATED FIELDS.
+            TO BE OVERRIDDEN IN ALL COMPLICATED FIELDS.
             Average the data in the user-specified way.
         """
 
@@ -565,19 +567,120 @@ class Field():
             #plt.show()
             return values_on_linear_grid
 
+    def field_interpolator(self, celldata):
 
-    def cellcentre2vertex(self,celldata):
+        #Need to turn off bounds errors and fill values to allow extrapolation
+        fn = RegularGridInterpolator((self.grid[0], self.grid[1], self.grid[2]),
+                                     celldata, bounds_error=False, fill_value=None)
+
+        return fn
+
+    def interp_3Darrays(self, fn, x, y, z):
+            """
+                We need array data as a list of lists
+            """
+
+            #We need array data as a list of lists
+            pts = []
+            for i, xp in enumerate(x):
+                for j, yp in enumerate(y):
+                    for k, zp in enumerate(z):
+                        pts.append([xp, yp, zp])
+   
+            #Interpolate and reshape
+            data = fn(pts)
+            interpdata = data.reshape(x.size, y.size, z.size)
+            return interpdata
+
+
+    def cellcentre2vertex(self, celldata, method="zoom"):
 
         """
            Routine to return grid data on an array one larger than the existing
            cell centred data - currently uses zoom for simplicity
 
         """
-        Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
-        vertexdata = scipy.ndimage.zoom(celldata,((Nx+1)/float(Nx),
-                                                  (Ny+1)/float(Ny),
-                                                  (Nz+1)/float(Nz)))
+       if method is "zoom":
+            Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
+            vertexdata = scipy.ndimage.zoom(celldata,((Nx+1)/float(Nx),
+                                                      (Ny+1)/float(Ny),
+                                                      (Nz+1)/float(Nz)))
+
+        elif method is "interp":
+
+            #Define values
+            xg = self.grid[0]
+            yg = self.grid[1]
+            zg = self.grid[2]
+            dx = xg[1]-xg[0]
+            dy = yg[1]-yg[0]
+            dz = zg[1]-zg[0]
+
+            #Get interpolator
+            fn = self.field_interpolator(celldata)
+
+            #Get grid of courner nodes
+            Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
+            assert Nx == self.grid[0].size
+            assert Ny == self.grid[1].size
+            assert Nz == self.grid[2].size
+            x = np.linspace(self.grid[0][0]-0.5*dx, self.grid[0][-1]+0.5*dx, Nx+1)
+            y = np.linspace(self.grid[1][0]-0.5*dy, self.grid[1][-1]+0.5*dy, Ny+1)
+            z = np.linspace(self.grid[2][0]-0.5*dz, self.grid[2][-1]+0.5*dz, Nz+1)
+
+            vertexdata = self.interp_3Darrays(fn, x, y, z)
+        else:
+            raise exception("Unknown method")
+
+
         return vertexdata
+
+    def cellcentre2surface(self, celldata, method="interp"):
+
+        if method is "interp":
+
+            surfacedata = np.zeros((celldata.shape[0], 
+                                    celldata.shape[1], 
+                                    celldata.shape[2],6))
+
+            #Get grid of centre abd surface values
+            Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
+            assert Nx == self.grid[0].size
+            assert Ny == self.grid[1].size
+            assert Nz == self.grid[2].size
+            xg = self.grid[0]
+            yg = self.grid[1]
+            zg = self.grid[2]
+            dx = xg[1]-xg[0]
+            dy = yg[1]-yg[0]
+            dz = zg[1]-zg[0]
+            xs = np.linspace(self.grid[0][0]-0.5*dx, self.grid[0][-1]+0.5*dx, Nx+1)
+            ys = np.linspace(self.grid[1][0]-0.5*dy, self.grid[1][-1]+0.5*dy, Ny+1)
+            zs = np.linspace(self.grid[2][0]-0.5*dz, self.grid[2][-1]+0.5*dz, Nz+1)
+
+            #Get interpolator
+            fn = self.field_interpolator(celldata)
+
+            # x surfaces   xs, y, z
+            data = self.interp_3Darrays(fn, xs, yg, zg)
+            surfacedata[:,:,:,0] = data[:-1,:,:] #Bottom
+            surfacedata[:,:,:,3] = data[1:,:,:]  #Top
+
+
+            # y surfaces   x, ys, z
+            data = self.interp_3Darrays(fn, xg, ys, zg)
+            surfacedata[:,:,:,1] = data[:,:-1,:] #Bottom
+            surfacedata[:,:,:,4] = data[:,1:,:]  #Top
+
+            # z surfaces   x, y, zs
+            data = self.interp_3Darrays(fn, xg, yg, zs)
+            surfacedata[:,:,:,2] = data[:,:,:-1] #Bottom
+            surfacedata[:,:,:,5] = data[:,:,1:]  #Top
+
+        else:
+            raise exception("Unknown method")
+
+        return surfacedata
 
         # Innards
 #        for i in range(1,Nx):

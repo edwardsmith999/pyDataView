@@ -41,7 +41,7 @@ momfieldtypes = {
                 'lammps': 
                     None,
                 'openfoam': 
-                    None,
+                    openfoamfields.OpenFOAM_momField,
                 'transflow': 
                     None
               }

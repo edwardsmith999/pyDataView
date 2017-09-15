@@ -28,6 +28,33 @@ class OpenFOAM_vField(OpenFOAMField):
         OpenFOAMField.__init__(self, fdir, self.fname)
         self.labels = ['u', 'v', 'w']
 
+# ============================================================================
+# OpenFOAMField derived classes, but calculated by the main code
+class OpenFOAM_momField(OpenFOAMField):
+
+    nperbin = 3 
+    fname = 'U'
+
+    def __init__(self, fdir):
+        OpenFOAMField.__init__(self, fdir, self.fname)
+        self.labels = ['u', 'v', 'w']
+
+
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
+        U = OpenFOAMField.read(self, startrec, endrec, **kwargs)
+        print("WARNING FROM OpenFOAM_momField, NEEDS RHO, ASSUMING 0.3")
+        return U*0.3
+
+
+
+class OpenFOAM_FField(OpenFOAMField):
+
+    nperbin = 3 
+    fname = 'F'
+
+    def __init__(self, fdir):
+        OpenFOAMField.__init__(self, fdir, self.fname)
+        self.labels = ['Fx', 'Fy', 'Fz']
 class OpenFOAM_PField(OpenFOAMField):
 
     nperbin = 1
@@ -36,6 +63,14 @@ class OpenFOAM_PField(OpenFOAMField):
     def __init__(self, fdir):
         OpenFOAMField.__init__(self, fdir, self.fname)
         self.labels = ['p']
+class OpenFOAM_epsField(OpenFOAMField):
+
+    nperbin = 1
+    fname = 'eps'
+
+    def __init__(self, fdir):
+        OpenFOAMField.__init__(self, fdir, self.fname)
+        self.labels = ['eps']
 
 #class OpenFOAM_StressField(OpenFOAMField):
 #

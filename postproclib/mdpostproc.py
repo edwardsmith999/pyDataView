@@ -125,6 +125,9 @@ class MD_PostProc(PostProc):
         #Surface mass
         if 'msurf' in (self.fieldfiles1):
             m1 = MD_mfluxField(self.resultsdir,'msurf', **kwargs)
+            self.plotlist.update({'msurf':m1})
+
+            m1 = MD_CVmassField(self.resultsdir)
             self.plotlist.update({'rho_surf':m1})
 
             if ('vflux'   in (self.fieldfiles1) and
@@ -197,7 +200,7 @@ class MD_PostProc(PostProc):
             self.plotlist.update({'rhouu CV':rhouuCV})
 
         if (('mflux' in self.fieldfiles1) and 
-            ('mbins' in self.fieldfiles1)     ):
+            ('msurf' in self.fieldfiles1)     ):
             try:
                 uCV =  MD_CVvField(self.resultsdir)
                 self.plotlist.update({'u CV':uCV})
@@ -302,6 +305,8 @@ class MD_PostProc(PostProc):
                 self.plotlist.update({'u':v1})
                 v1 = MD_ufluctField(self.resultsdir, **kwargs)
                 self.plotlist.update({'u^\prime':v1})
+                v1 = MD_vFieldatsurface(self.resultsdir, **kwargs)
+                self.plotlist.update({'u at surface':v1})
             except DataMismatch:
                 pass
 

@@ -26,7 +26,9 @@ class OpenFOAM_PostProc(PostProc):
             raise NoResultsInDir
 
         possibles = {'U': OpenFOAM_vField, 
-                     'P': OpenFOAM_PField}
+                     'P': OpenFOAM_PField,
+                     'eps': OpenFOAM_epsField,
+                     'F': OpenFOAM_FField}
 
         self.plotlist = {}
         for key, field in possibles.items(): 

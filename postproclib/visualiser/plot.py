@@ -111,6 +111,8 @@ class PyplotPanel(wx.Panel):
         #print(self.parent.bin,self.parent.rec, self.parent.recwidth, self.parent.binwidth,  self.parent.component,  self.parent.normal,  self.parent.fieldname, self.parent.plottype)
 
         ppdir = os.path.realpath(__file__)
+        inx = ppdir.find('/postproclib')
+        ppdir = ppdir[:inx]
         script = self.minimalscript(plottype=self.parent.plottype,
                                     fdir=self.parent.fdir,
                                     ppdir=ppdir, 

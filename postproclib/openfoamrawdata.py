@@ -13,10 +13,12 @@ class OpenFOAM_RawData(RawData):
         self.fdir = fdir
         self.procxyz = self.get_proc_topology()
         self.procs = int(np.product(self.procxyz))
-        if self.procs != 1:
+        print("OpenFOAM_RawData Warning - disable parallel check, assuming always parallel")
             self.parallel_run = True
-        else:
-            self.parallel_run = False
+        #if self.procs != 1:
+        #    self.parallel_run = True
+        #else:
+        #    self.parallel_run = False
         self.grid = self.get_grid()
         self.reclist = self.get_reclist()
         self.maxrec = len(self.reclist) - 1 # count from 0
@@ -69,44 +71,115 @@ class OpenFOAM_RawData(RawData):
                                 npercell), order='F') 
         return array
 
+#    def read_list(self, fobj):
+
+#        flist = []
+#        for line in fobj:
+#            if line[0] == '(' and ')' in line:
+#                values = line.split('(')[-1].split(')')[0].split()
+#                flist.append([float(i) for i in values])
+#        return flist
+
+#    def read_list_named_entry(self, fobj, entryname):
+
+#        def read_list_from_here(fobj):
+
+#            nitems = int(fobj.next())
+#            checkopenbracket = fobj.next()
+#            if (checkopenbracket[0] != '('):
+#                raise 
+
+#            herelist = []
+#            for lineno in range(nitems):
+#                line = fobj.next()
+#                if line[0] == '(' and ')' in line:
+#                    values = line.split('(')[-1].split(')')[0].split()
+#                    herelist.append([float(i) for i in values])
+#                else:
+#                    herelist.append(float(line))
+
+#            checkclosebracket = fobj.next()
+#            if (checkclosebracket[0] != ')'):
+#                raise
+#    
+#            return herelist
+#            
+#        # Find entryname
+#        for line in fobj:
+#            if (entryname in line):
+#                if "nonuniform List" in line:
+#                    flist = read_list_from_here(fobj)
+#                    return flist
+#                elif " uniform 0" in line:
+#                    flist = [0]
+#                    return flist
+#                else:
+#                    # Else check for fixed values or skip next
+#                    # 4 lines until start of list<vector>
+#                    for count in range(5):
+#                        nline = fobj.next()
+
+#                        if " uniform" in nline:
+#                            flist = nline.split("(")[1].split(")")[0].split(" ") 
+#                            #print(entryname, " is fixed value in file", flist)
+#                            return flist
+#    
+#                        elif "nonuniform List" in nline:
+#                            flist = read_list_from_here(fobj)
+#                            return flist
+
+#        return []
+
+
+    #These are a re-write of the above reading the whole file to
+    #memory instead of using next
     def read_list(self, fobj):
 
+        fobj_list = fobj.read().splitlines()
         flist = []
-        for line in fobj:
-            if line[0] == '(' and ')' in line:
-                values = line.split('(')[-1].split(')')[0].split()
-                flist.append([float(i) for i in values])
+        for line in fobj_list:
+            try:
+                if (line[0] == '(') and (')' in line):
+                    values = line.split('(')[-1].split(')')[0].split()
+                    flist.append([float(i) for i in values])
+            except IndexError:
+                pass
+
         return flist
 
-    def read_list_named_entry(self, fobj, entryname):
+    def read_list_from_here(self, fobj_list, kwl):
 
-        def read_list_from_here(fobj):
+        nitems = int(fobj_list[kwl+1])
+        checkopenbracket = fobj_list[kwl+2]
+        if (checkopenbracket[0] != '('):
+            raise 
 
-            nitems = int(fobj.next())
-            checkopenbracket = fobj.next()
-            if (checkopenbracket[0] != '('):
-                raise 
-
-            herelist = []
-            for lineno in range(nitems):
-                line = fobj.next()
-                if line[0] == '(' and ')' in line:
+        herelist = []
+        for lineno in range(nitems):
+            line = fobj_list[kwl+3+lineno]
+            try:
+                if (line[0] == '(') and (')' in line):
                     values = line.split('(')[-1].split(')')[0].split()
                     herelist.append([float(i) for i in values])
                 else:
                     herelist.append(float(line))
+            except IndexError:
+                pass
 
-            checkclosebracket = fobj.next()
-            if (checkclosebracket[0] != ')'):
-                raise
-    
-            return herelist
-            
+        checkclosebracket = fobj_list[kwl+4+lineno]
+        if (checkclosebracket[0] != ')'):
+            raise
+
+        return herelist
+
+    def read_list_named_entry(self, fobj, entryname):
+
+        fobj_list = fobj.read().splitlines()           
         # Find entryname
-        for line in fobj:
+        for i, line in enumerate(fobj_list):
             if (entryname in line):
                 if "nonuniform List" in line:
-                    flist = read_list_from_here(fobj)
+                    flist = self.read_list_from_here(fobj_list, i)
                     return flist
                 elif " uniform 0" in line:
                     flist = [0]
@@ -115,7 +188,7 @@ class OpenFOAM_RawData(RawData):
                     # Else check for fixed values or skip next
                     # 4 lines until start of list<vector>
                     for count in range(5):
-                        nline = fobj.next()
+                        nline = fobj_list[i+1+count]
 
                         if " uniform" in nline:
                             flist = nline.split("(")[1].split(")")[0].split(" ") 
@@ -123,7 +196,7 @@ class OpenFOAM_RawData(RawData):
                             return flist
     
                         elif "nonuniform List" in nline:
-                            flist = read_list_from_here(fobj)
+                            flist = self.read_list_from_here(fobj, i+count)
                             return flist
 
         return []
@@ -329,6 +402,16 @@ class OpenFOAM_RawData(RawData):
                     fdir = self.fdir+"processor" + str(proc) + "/"
                     fpath = fdir + self.reclist[startrec+plusrec] + self.fname
 
+                    #Try a quick read based on assumed data format, otherwise switch 
+#                    try:
+#                        data = np.genfromtxt(fpath, skip_footer=self.ncx*self.ncz+36, skip_header=22) #64 by 64 footer of 4134
+#                        print(data.shape, self.ncx,self.ncy,self.ncz,nrecs,self.npercell)
+#                        vtemp = data.reshape(self.ncx,self.ncy,self.ncz,self.npercell)
+#                        odata[:,:,:,plusrec,:] = vtemp
+
+#                    except:
+#                        print("Quick read failed")
+#                        raise
                     with open(fpath,'r') as fobj:
                         vlist = self.read_list_named_entry(fobj, 'internalField')
                         #Case when field is constant has a single value

@@ -28,7 +28,19 @@ class FieldTypePanel(scrolled.ScrolledPanel):
         vbox.Add(self.fieldradiobox, 0, wx.EXPAND|wx.ALL, 10)
         self.SetSizer(vbox)
         self.SetAutoLayout(1)
-        self.SetupScrolling()
+        self.SetupScrolling(scroll_x=False, scrollToTop=False)
+
+        #Fix to prevent jump to top when select
+        self.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
+
+    def on_focus(self,event):
+        pass
+
+        #Fix to prevent jump to top when select
+        self.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
+
+    def on_focus(self,event):
+        pass
 
 class SaveFigurePanel(wx.Panel):
 
