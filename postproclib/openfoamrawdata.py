@@ -14,7 +14,7 @@ class OpenFOAM_RawData(RawData):
         self.procxyz = self.get_proc_topology()
         self.procs = int(np.product(self.procxyz))
         print("OpenFOAM_RawData Warning - disable parallel check, assuming always parallel")
-            self.parallel_run = True
+        self.parallel_run = True
         #if self.procs != 1:
         #    self.parallel_run = True
         #else:

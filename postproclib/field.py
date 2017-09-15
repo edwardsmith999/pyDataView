@@ -600,7 +600,7 @@ class Field():
            cell centred data - currently uses zoom for simplicity
 
         """
-       if method is "zoom":
+        if method is "zoom":
             Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
             vertexdata = scipy.ndimage.zoom(celldata,((Nx+1)/float(Nx),
                                                       (Ny+1)/float(Ny),
