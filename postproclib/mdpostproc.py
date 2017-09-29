@@ -249,6 +249,22 @@ class MD_PostProc(PostProc):
             except DataMismatch:
                 pass
 
+        if ('ebins' in self.fieldfiles1 and
+            'Tbins' in self.fieldfiles1):
+            try:
+                U =  MD_potEnergyField(self.resultsdir, **kwargs)
+                self.plotlist.update({'U':U})
+            except DataMismatch:
+                pass
+
+        if (('ebins' in self.fieldfiles1 and 'Tbins' in self.fieldfiles1) and 
+           (('pVA'   in self.fieldfiles1) or 
+            ('pVA_k' in self.fieldfiles1 and 'pVA_c' in self.fieldfiles1 ))):
+            try:
+                h =  MD_enthalpyField(self.resultsdir, **kwargs)
+                self.plotlist.update({'h':h})
+            except DataMismatch:
+                pass
 
         #CV stresses
         if 'psurface' in (self.fieldfiles1):

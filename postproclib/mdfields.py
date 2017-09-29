@@ -834,6 +834,67 @@ class MD_EnergyField(MD_complexField):
 
 
 
+class MD_potEnergyField(MD_complexField):
+
+    """
+        The internal energy of the fluid
+        worked out by subtracting kinetic
+        energy from total collected energy
+    """
+
+    def __init__(self, fdir):
+        self.mField = MD_mField(fdir)
+        self.TField = MD_EField(fdir, fname='Tbins')
+        self.EField = MD_EField(fdir, fname='ebins')
+        Field.__init__(self,self.EField.Raw)
+        self.inherit_parameters(self.EField)
+
+        if (self.mField.plotfreq != self.EField.plotfreq):
+            print("Error in MD_EField -- Nmass_ave " + 
+                  "differs from Nenergy_ave")
+            raise DataMismatch
+
+        if (self.TField.plotfreq != self.EField.plotfreq):
+            print("Error in MD_EField -- NTave " +
+                  "differs from Nenergy_ave ")
+            raise DataMismatch  
+
+        self.plotfreq = self.EField.plotfreq
+        self.axislabels = self.EField.axislabels
+        self.labels = self.EField.labels
+
+    def read(self, startrec, endrec, **kwargs):
+
+        mdata = self.mField.read(startrec, endrec, **kwargs)
+        Tdata = self.TField.read(startrec, endrec, **kwargs)
+        Edata = self.EField.read(startrec, endrec, **kwargs)
+        potdata = Edata - Tdata/2.
+
+        # Energy (no streaming consideration)
+        potout = np.divide(potdata,mdata)
+        potout[np.isnan(potout)] = 0.0
+
+        return potout
+
+    def averaged_data(self, startrec, endrec, 
+                      avgaxes=(), **kwargs):
+        
+        # Read 4D time series from startrec to endrec
+        mdata = self.mField.read(startrec, endrec, **kwargs)
+        Tdata = self.TField.read(startrec, endrec, **kwargs)
+        Edata = self.EField.read(startrec, endrec, **kwargs)
+        potdata = Edata - Tdata/2.
+
+        # Consider streaming velocity
+        if (avgaxes != ()):
+            mdata = np.sum(mdata, axis=avgaxes) 
+            potdata = np.sum(potdata, axis=avgaxes) 
+
+        # Energy (no streaming consideration)
+        potdata = np.divide(potdata, mdata)
+        potdata[np.isnan(potdata)] = 0.0
+
+        return potdata
 class MD_rhoEnergyField(MD_complexField):
 
     def __init__(self, fdir, peculiar=False):
@@ -893,6 +954,45 @@ class MD_rhoEnergyField(MD_complexField):
 
         return Edata
 
+class MD_enthalpyField(MD_complexField):
+
+    """
+        The enthalpy of the fluid
+        worked out adding internal energy
+        to pressure times cell volume
+    """
+
+    def __init__(self, fdir, peculiar=False):
+        self.pVAField = MD_pVAField(fdir,fname='pVA')
+        self.EField =MD_potEnergyField(fdir)
+        Field.__init__(self,self.EField.Raw)
+        self.inherit_parameters(self.EField)
+
+        if (self.pVAField.plotfreq != self.EField.plotfreq):
+            print("Error in MD_EField -- NpVA_ave " + 
+                  "differs from Nenergy_ave")
+            raise DataMismatch
+
+        self.plotfreq = self.EField.plotfreq
+        self.axislabels = self.EField.axislabels
+        self.labels = self.EField.labels
+        self.peculiar = peculiar
+
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
+
+        Edata = self.EField.read(startrec, endrec, **kwargs)
+        pVAdata = self.pVAField.read(startrec, endrec, **kwargs)
+        P = np.zeros([pVAdata.shape[0],
+                      pVAdata.shape[1],
+                      pVAdata.shape[2],
+                      pVAdata.shape[3],1])
+        P[:,:,:,:,0] = (pVAdata[:,:,:,:,0] + pVAdata[:,:,:,:,4] + pVAdata[:,:,:,:,8])/3.
+        gridvolumes = self.EField.Raw.get_gridvolumes(binlimits=binlimits)
+        gridvolumes = np.expand_dims(gridvolumes,axis=-1)
+
+        h = (Edata + P/gridvolumes)*gridvolumes
+
+        return h
 
 class MD_pVAheat_Field(MD_complexField):
 
