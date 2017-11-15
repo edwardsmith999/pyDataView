@@ -18,6 +18,35 @@ class OpenFOAMField(Field):
         self.plotfreq = 1
 
 # ============================================================================
+# OpenFOAMField derived classes scalar, vector and tensor fields
+class OpenFOAM_ScalarField(OpenFOAMField):
+
+    nperbin = 1
+
+    def __init__(self, fdir, fname):
+        OpenFOAMField.__init__(self, fdir, fname)
+        self.fname = fname
+        self.labels = ['scalar']
+
+class OpenFOAM_VectorField(OpenFOAMField):
+
+    nperbin = 3 
+
+    def __init__(self, fdir, fname):
+        OpenFOAMField.__init__(self, fdir, fname)
+        self.fname = fname
+        self.labels = ['x', 'y', 'z']
+
+class OpenFOAM_SymmTensorField(OpenFOAMField):
+
+    nperbin = 6
+
+    def __init__(self, fdir, fname):
+        OpenFOAMField.__init__(self, fdir, fname)
+        self.fname = fname
+        self.labels = ['xx', 'xy', 'xz', "yy", "yz", "zz"]
+
+# ============================================================================
 # OpenFOAMField derived classes, but calculated by the main code
 class OpenFOAM_vField(OpenFOAMField):
 

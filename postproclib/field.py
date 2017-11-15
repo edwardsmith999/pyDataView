@@ -258,6 +258,28 @@ class Field():
 
         return windoweddata, wss 
 
+    def trim_binlimits(self, binlimits, bins):
+
+        """
+            Trims a given field of bins based on binlimits
+        """
+
+        # Defaults
+        lower = [0]*3
+        upper = [i for i in bins.shape] 
+
+        for axis in range(3):
+            if (binlimits[axis] == None):
+                continue
+            else:
+                lower[axis] = binlimits[axis][0] 
+                upper[axis] = binlimits[axis][1] 
+
+        return bins[lower[0]:upper[0],
+                    lower[1]:upper[1],
+                    lower[2]:upper[2], :, :]
+
+
     def power_spectrum(self,data=None,startrec=None,endrec=None,
                        preavgaxes=(), fftaxes=(),postavgaxes=(), 
                        windowaxis=None, verify_Parseval=True,

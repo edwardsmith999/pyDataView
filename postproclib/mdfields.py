@@ -99,6 +99,17 @@ class MD_exampleField(MDField):
 
         # If bin limits are specified, return only those within range
         if (binlimits):
+            array = self.trim_binlimits(binlimits, array)
+#            # Defaults
+#            lower = [0]*3
+#            upper = [i for i in array.shape] 
+#    
+#            for axis in range(3):
+#                if (binlimits[axis] == None):
+#                    continue
+#                else:
+#                    lower[axis] = binlimits[axis][0] 
+#                    upper[axis] = binlimits[axis][1] 
 
             # Defaults
             lower = [0]*3

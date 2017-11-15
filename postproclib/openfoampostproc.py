@@ -2,6 +2,7 @@ import os
 from openfoamfields import *
 from postproc import PostProc
 from pplexceptions import NoResultsInDir 
+import glob
 
 class OpenFOAM_PostProc(PostProc):
 
@@ -36,4 +37,22 @@ class OpenFOAM_PostProc(PostProc):
                 self.plotlist[key] = field(self.resultsdir)
             except AssertionError:
                 pass 
+        #Try to parse any other files
+        files = glob.glob(self.resultsdir + '0/*')
+        for filename in files:
+            with open(filename) as f:
+                for line in f:
+                    if "class" in line:
+                        fname = filename.split("/")[-1]
+                        if "volScalarField" in line:
+                            S = OpenFOAM_ScalarField(self.resultsdir, fname, **kwargs)
+                        elif "volVectorField":
+                            S = OpenFOAM_VectorField(self.resultsdir, fname, **kwargs)
+                        elif "volSymmTensorField":
+                            S = OpenFOAM_SymmTensorField(self.resultsdir, fname, **kwargs)
+                        else:
+                            continue
+                        print(filename, fname, S)
+
+            self.plotlist.update({fname:S})
 

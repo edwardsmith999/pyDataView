@@ -14,7 +14,7 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
 
 setup( name = "pyDataViewer",
        version = "1.0",
-       author = ["Edward Smith","David Trevelyan"]
+       author = ["Edward Smith","David Trevelyan"],
        author_email = "edward.smith05@imperial.ac.uk",
        url = "https://github.com/edwardsmith999/pyDataView",
        classifiers=['Development Status :: 3 - Alpha',
@@ -24,7 +24,7 @@ setup( name = "pyDataViewer",
        license = "GPL",
        install_requires=['numpy', 'scipy', 'matplotlib', 'wxpython'],
        extras_require = {'Channelflow_plots':  ["h5py"], 
-                         'cpl_plots',:["skimage"]},
+                         'cpl_plots':["skimage"]},
        description = "Data Viewer GUI written in python, wxpython and matplotlib",
        long_description = long_description,
        entry_points={
@@ -33,11 +33,3 @@ setup( name = "pyDataViewer",
             ],
        },
 )
-~                                                                                                                                           
-~                                                                                                                                           
-~                                                                                                                                           
-~                                                                                                                                           
-~                                                                                                                                           
-~                                                                                                                                           
-~                                                                                                                                           
-~                                        
