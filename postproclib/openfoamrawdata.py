@@ -3,32 +3,67 @@ import numpy as np
 import os
 
 from rawdata import RawData
+from headerdata import HeaderData
 from pplexceptions import DataNotAvailable
 
 class OpenFOAM_RawData(RawData):
     
-    def __init__(self, fdir, fname, nperbin):
+    def __init__(self, fdir, fname, nperbin, parallel_run=None):
 
         if (fdir[-1] != '/'): fdir += '/'
         self.fdir = fdir
-        self.procxyz = self.get_proc_topology()
-        self.procs = int(np.product(self.procxyz))
-        print("OpenFOAM_RawData Warning - disable parallel check, assuming always parallel")
-        self.parallel_run = True
-        #if self.procs != 1:
-        #    self.parallel_run = True
-        #else:
-        #    self.parallel_run = False
+        self.parallel_run = parallel_run
+        if parallel_run==None:
+            self.procxyz = self.get_proc_topology()
+            self.procs = int(np.product(self.procxyz))
+            if self.procs != 1:
+                self.parallel_run = True
+            else:
+                self.parallel_run = False
+        elif parallel_run or not parallel_run:
+            self.parallel_run = parallel_run
+            self.procxyz = np.ones(3)
+            self.procs = 1
+        else:
+            raise TypeError("parallel_run must be a True, False or None") 
+
         self.grid = self.get_grid()
         self.reclist = self.get_reclist()
         self.maxrec = len(self.reclist) - 1 # count from 0
         self.fname = fname
         self.npercell = nperbin #self.get_npercell()
         self.nu = self.get_nu()
-        self.header = None
+        self.delta_t = ( float(self.reclist[1].replace("/",""))
+                        -float(self.reclist[0].replace("/","")))
+        #Mock header data needed for vmdfields
+        self.header = HeaderData([])
+        tplot = 1
+        skip = 1
+        initialstep = 0
+        #This variables have no meaning in a pure CFD calculation
+        #so would need to be set by a coupled run. Horrible
+        #hack included here to do this is cpl file present...
+        try: 
+            with open('./cpl/COUPLER.in') as f:
+                fs = f.read()
+                indx = fs.find("TIMESTEP_RATIO")
+                self.Nave = int(fs[indx:].split("\n")[1])
+        except IOError:
+            self.Nave = 1
+        self.header.vmd_skip = str(skip)
+        self.header.vmd_start = str(initialstep)
+        vmdmaxrec = self.maxrec*tplot*skip*self.Nave
+        self.header.vmd_end = str(vmdmaxrec)
+        self.header.Nsteps = str(vmdmaxrec)
+
+        #The rest makes sense
+        self.header.tplot = str(tplot)
+        self.header.delta_t = str(self.delta_t)
+        self.header.initialstep = str(initialstep)
+
 
     def get_npercell(self):
-
+     
         # Read first record (reclist[0]) as example 
         if self.parallel_run:
             fpath = self.fdir+"/processor0/"+self.reclist[0]+self.fname
@@ -201,7 +236,6 @@ class OpenFOAM_RawData(RawData):
 
         return []
 
-
     def read_cells(self, fobj, ncells):
 
 
@@ -240,7 +274,7 @@ class OpenFOAM_RawData(RawData):
         try:
             fobj = open(self.fdir+'/system/decomposeParDict','r')
         except IOError:
-            raise DataNotAvailable
+            return np.ones(3)
 
         alltxt = fobj.readlines()
         for n,line in enumerate(alltxt):
@@ -269,7 +303,10 @@ class OpenFOAM_RawData(RawData):
         try:
             fobj = open(self.fdir+'constant/polyMesh/blockMeshDict','r')
         except IOError:
-            raise DataNotAvailable
+            try: 
+                fobj = open(self.fdir+'system/blockMeshDict','r')
+            except IOError:
+                raise DataNotAvailable
 
         while True:
             line = fobj.readline()
@@ -348,10 +385,11 @@ class OpenFOAM_RawData(RawData):
                 # THIS DOES NOT WORK WITH VARIABLE Z PROCESSORS!!!!!!!!!!!
 
                 #print(proc, self.minx[proc],self.maxx[proc],self.miny[proc],self.maxy[proc],self.minz[proc],self.maxz[proc],nperprocx,nperprocy,nperprocz,ctemp.shape)
+
         # Return list of cell-centre locations in each direction
-        gridx = np.linspace(self.dx/2., self.xL-self.dx/2., num=self.ncx)
-        gridy = np.linspace(self.dy/2., self.yL-self.dy/2., num=self.ncy)
-        gridz = np.linspace(self.dz/2., self.zL-self.dz/2., num=self.ncz)
+        gridx = np.linspace(self.dx/2., self.xL - self.dx/2., num=self.ncx)
+        gridy = np.linspace(self.dy/2., self.yL - self.dy/2., num=self.ncy)
+        gridz = np.linspace(self.dz/2., self.zL - self.dz/2., num=self.ncz)
         
         grid = [gridx,gridy,gridz]
 
@@ -424,12 +462,13 @@ class OpenFOAM_RawData(RawData):
                             for i in range(len(vlist)):
                                 olist[int(self.cellmap[proc][i]),:] = vlist[i]
 
-                    #Reshape global list to cells
-                    vtemp = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
-                    odata[:,:,:,plusrec,:] = vtemp
+                            #Reshape global list to cells
+                            vtemp = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
+                            odata[:,:,:,plusrec,:] = vtemp
 
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
+
                 with open(fpath,'r') as fobj:
                     vlist = self.read_list_named_entry(fobj, 'internalField')
                     #Case when field is constant has a single value
@@ -438,8 +477,7 @@ class OpenFOAM_RawData(RawData):
                             odata[:,:,:,plusrec,dim] = float(vlist[dim])
                     else:
                         vtemp = self.reshape_list_to_cells(vlist, self.npercell)
-
-                odata[:,:,:,plusrec,:] = vtemp 
+                        odata[:,:,:,plusrec,:] = vtemp 
                 
         # If bin limits are specified, return only those within range
         if (binlimits):
@@ -462,9 +500,11 @@ class OpenFOAM_RawData(RawData):
             odata = odata[lower[0]:upper[0],
                           lower[1]:upper[1],
                           lower[2]:upper[2], :, :]
+         
         return odata
 
     def read_halo(self, startrec, endrec, **kwargs):
+
 
         """
             Warning -- there is no processor to cell 
@@ -475,7 +515,7 @@ class OpenFOAM_RawData(RawData):
         nrecs = endrec - startrec + 1
 
         # Allocate storage (despite ascii read!)
-        odata = np.empty((self.ncx, 1, self.ncz,nrecs, self.npercell))
+        odata = np.empty((self.ncx,1,self.ncz,nrecs,self.npercell))
 
         # Loop through files and insert data
         for plusrec in range(0,nrecs):
@@ -522,9 +562,8 @@ class OpenFOAM_RawData(RawData):
                     else:
                         vtemp = self.reshape_list_to_cells(vlist, self.npercell)
                         odata[:,0:1,:,plusrec,:] = vtemp
-         
-        return odata
 
+            return odata
 
     def get_nu(self):
 
@@ -538,4 +577,4 @@ class OpenFOAM_RawData(RawData):
             nu = float(line.split(']')[-1].split(';')[0]) 
         
         return nu
-    
+

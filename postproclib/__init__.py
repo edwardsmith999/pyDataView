@@ -1,4 +1,5 @@
 # Only import the classes we want to be accessible to the user
+from allpostproc import All_PostProc
 from mdfields import *
 from mdpostproc import *
 
@@ -10,9 +11,10 @@ from channelflowpostproc import *
 
 from serial_cfdfields import *
 
-from cplfields import *
-
 from pplexceptions import *
+
+from vmdfields import *
+from build_vmd_polymer_psf import *
 
 from openfoamfields import *
 from openfoampostproc import *

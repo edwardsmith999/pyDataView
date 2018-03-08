@@ -198,13 +198,23 @@ def latextounicode(strings):
 
     if type(strings) is unicode:
         string = strings.encode('utf8')
-        strings = strings.replace('rho','\xcf\x81')
+        try:
+            strings = strings.replace('rho','\xcf\x81')
+        except UnicodeDecodeError:
+            pass
     if type(strings) is str:
-        strings = strings.replace('rho','\xcf\x81')
+        try:
+            strings = strings.replace('rho','\xcf\x81')
+        except UnicodeDecodeError:
+            pass
     elif type(strings) is list:
         for i, string in enumerate(strings):
-            strings[i] = string.replace('rho','\xcf\x81')
+            try:
+               strings[i] = string.replace('rho','\xcf\x81')
+            except UnicodeDecodeError:
+                pass
             #latex2utf.latex2utf(string)
+
 
     return strings
 

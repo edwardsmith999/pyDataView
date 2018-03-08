@@ -220,7 +220,13 @@ class VisualiserPanel(wx.Panel):
         except AttributeError:
             self.choosep.component_p.componentcombobox.AppendItems(
                 [str(x) for x in range(self.field.nperbin)])
+        try:
+            #Set component to zero if existing one is too large
+            if (len(self.field.labels) < self.component+1):
         self.component = 0
+        except AttributeError:
+            #Define component to 0 if doesn't exist
+            self.component = 0
         self.choosep.component_p.componentcombobox.SetSelection(self.component)
 
     def update_normals(self,normal=0):

@@ -8,8 +8,8 @@ from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import sys
 
-class OutsideRecRange(Exception):
-    pass
+from pplexceptions import OutsideRecRange
+
 
 class Field():
 
@@ -67,8 +67,7 @@ class Field():
 
         grid_data = self.Raw.read(startrec,endrec,**kwargs)
         return grid_data
-
-
+    
     def read_halo(self,startrec,endrec,**kwargs):
 
         """
@@ -78,7 +77,7 @@ class Field():
            return self.Raw.read_halo(startrec,endrec,**kwargs)
         except AttributeError:
             raise
-    
+
     def averaged_data(self,startrec,endrec,avgaxes=(),**kwargs):
 
         """
@@ -256,7 +255,8 @@ class Field():
         windoweddata = np.apply_along_axis(window_axis_function, 
                                            newaxis, data, window)
 
-        return windoweddata, wss 
+        return windoweddata, wss
+
 
     def trim_binlimits(self, binlimits, bins):
 
@@ -278,7 +278,6 @@ class Field():
         return bins[lower[0]:upper[0],
                     lower[1]:upper[1],
                     lower[2]:upper[2], :, :]
-
 
     def power_spectrum(self,data=None,startrec=None,endrec=None,
                        preavgaxes=(), fftaxes=(),postavgaxes=(), 
@@ -411,7 +410,8 @@ class Field():
 
         return gradv
 
-    def write_dx_file(self,startrec,endrec,writedir=None,component=0,**kwargs):
+    def write_dx_file(self, startrec, endrec, writedir=None, 
+                            component=0, norm=False, **kwargs):
 
         """
            Write MD field to dx file format which is primarily
@@ -429,6 +429,13 @@ class Field():
 
             data = self.read(startrec=rec,endrec=rec,**kwargs)
 
+            if norm:
+                if ((np.max(data[:,:,:,:,component])) > 1e-14):
+                    data = (data-np.min(data[:,:,:,:,component])
+                            /( np.max(data[:,:,:,:,component])
+							  -np.min(data[:,:,:,:,component])))
+
+
             #Return minimum and maximum values
             datamin.append(np.min(data[:,:,:,:,component]))
             datamax.append(np.max(data[:,:,:,:,component]))
@@ -436,11 +443,14 @@ class Field():
             Nx, Ny, Nz = data.shape[0], data.shape[1], data.shape[2]
             dx,dy,dz = [(self.grid[i][1] - self.grid[i][0]) for i in range(3)]
             Lx = float(Nx) * dx; Ly = float(Ny) * dy; Lz = float(Nz) * dz
-            originx = -Lx/2.0
-            originy = -Ly/2.0
-            originz = -Lz/2.0
-
+            originx = np.min(self.grid[0])
+            originy = np.min(self.grid[1])
+            originz = np.min(self.grid[2])
+#            originx = -Lx/2.0
+#            originy = -Ly/2.0
+#            originz = -Lz/2.0
             data = self.cellcentre2vertex(data[:,:,:,0,component])
+
             Nx_v, Ny_v, Nz_v = data.shape[0], data.shape[1], data.shape[2]
 
             #Get file name
@@ -622,6 +632,7 @@ class Field():
            cell centred data - currently uses zoom for simplicity
 
         """
+
         if method is "zoom":
             Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
             vertexdata = scipy.ndimage.zoom(celldata,((Nx+1)/float(Nx),
@@ -643,6 +654,7 @@ class Field():
 
             #Get grid of courner nodes
             Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
+
             assert Nx == self.grid[0].size
             assert Ny == self.grid[1].size
             assert Nz == self.grid[2].size
@@ -708,5 +720,6 @@ class Field():
 #        for i in range(1,Nx):
 #            for j in range(1,Ny):
 #                for k in range(1,Nz):
-#                    vertexdata[i,j,k] = np.mean(celldata[i-1:i+2,j-1:j+2,k-1:k+2]) 
+#                    vertexdata[i,j,k] = np.mean(celldata[i-1:i+2,j-1:j+2,k-1:k+2])
+
 

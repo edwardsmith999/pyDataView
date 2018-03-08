@@ -100,31 +100,6 @@ class MD_exampleField(MDField):
         # If bin limits are specified, return only those within range
         if (binlimits):
             array = self.trim_binlimits(binlimits, array)
-#            # Defaults
-#            lower = [0]*3
-#            upper = [i for i in array.shape] 
-#    
-#            for axis in range(3):
-#                if (binlimits[axis] == None):
-#                    continue
-#                else:
-#                    lower[axis] = binlimits[axis][0] 
-#                    upper[axis] = binlimits[axis][1] 
-
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in array.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            array = array[lower[0]:upper[0],
-                          lower[1]:upper[1],
-                          lower[2]:upper[2], :, :]
 
         return array
 
@@ -906,6 +881,7 @@ class MD_potEnergyField(MD_complexField):
         potdata[np.isnan(potdata)] = 0.0
 
         return potdata
+
 class MD_rhoEnergyField(MD_complexField):
 
     def __init__(self, fdir, peculiar=False):
@@ -964,6 +940,8 @@ class MD_rhoEnergyField(MD_complexField):
         Edata = np.divide(Edata, gridvolumes)
 
         return Edata
+
+
 
 class MD_enthalpyField(MD_complexField):
 
@@ -1297,6 +1275,9 @@ class MD_eFieldatsurface(MD_complexField):
         newshape = tuple(eeshapelist[0:4]+[self.nperbin])
         esurface = np.reshape(esurface, newshape)
 
+        if (binlimits):
+            esurface = self.trim_binlimits(binlimits, esurface)
+
         return esurface
 
 
@@ -1392,9 +1373,10 @@ class MD_mFieldatsurface(MD_complexField):
                        "xtop","ytop","ztop"]
         self.nperbin = 6
 
-    def read(self, startrec, endrec, **kwargs):
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
 
-        mdata   = self.mField.read(startrec, endrec, **kwargs)
+        #Read the whole domain, interpolate and then trim
+        mdata   = self.mField.read(startrec, endrec, binlimits=None, **kwargs)
         #Get v on surface
         msurface = np.zeros([mdata.shape[0],
                              mdata.shape[1],
@@ -1407,6 +1389,9 @@ class MD_mFieldatsurface(MD_complexField):
         mmshapelist = list(mdata.shape)
         newshape = tuple(mmshapelist[0:4]+[self.nperbin])
         msurface = np.reshape(msurface, newshape)
+
+        if (binlimits):
+            msurface = self.trim_binlimits(binlimits, msurface)
 
         return msurface
 
@@ -1497,9 +1482,9 @@ class MD_vFieldatsurface(MD_complexField):
                        "xztop","yztop","zztop"]
         self.nperbin = 18
 
-    def read(self, startrec, endrec, **kwargs):
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
 
-        vdata   = self.vField.read(startrec, endrec, **kwargs)
+        vdata   = self.vField.read(startrec, endrec, binlimits=None, **kwargs)
         #Get v on surface
         vsurface = np.zeros([vdata.shape[0],
                              vdata.shape[1],
@@ -1514,6 +1499,9 @@ class MD_vFieldatsurface(MD_complexField):
         newshape = tuple(vvshapelist[0:4]+[self.nperbin])
         vsurface = np.reshape(vsurface, newshape)
 
+        if (binlimits):
+            vsurface = self.trim_binlimits(binlimits, vsurface)
+ 
         return vsurface
 
 
@@ -1706,9 +1694,9 @@ class MD_eFieldatsurface(MD_complexField):
                         "xtop","ytop","ztop"]
         self.nperbin = 6
 
-    def read(self, startrec, endrec, **kwargs):
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
 
-        edata   = self.EField.read(startrec, endrec, **kwargs)
+        edata   = self.EField.read(startrec, endrec, binlimits=None, **kwargs)
         #Get v on surface
         esurface = np.zeros([edata.shape[0],
                              edata.shape[1],
@@ -1721,6 +1709,7 @@ class MD_eFieldatsurface(MD_complexField):
         eeshapelist = list(edata.shape)
         newshape = tuple(eeshapelist[0:4]+[self.nperbin])
         esurface = np.reshape(esurface, newshape)
+
 
         return esurface
 
@@ -2027,21 +2016,7 @@ class MD_strainField(MD_complexField):
                                dz=float(self.header.binsize3))
 
         if (binlimits):
-
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in straindata.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            straindata = straindata[lower[0]:upper[0],
-                                    lower[1]:upper[1],
-                                    lower[2]:upper[2], :, :]
+            straindata = self.trim_binlimits(binlimits, straindata)
 
         return straindata
 
@@ -2070,21 +2045,7 @@ class MD_vortField(MD_complexField):
                                -dudr[:,:,:,:,1])
 
         if (binlimits):
-
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in vortdata.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            vortdata = vortdata[lower[0]:upper[0],
-                                lower[1]:upper[1],
-                                lower[2]:upper[2], :, :]
+            vortdata = self.trim_binlimits(binlimits, vortdata)
 
         return  vortdata
 
@@ -2123,21 +2084,7 @@ class MD_dissipField(MD_complexField):
                                  + np.power(dudr[:,:,:,:,8],2))
 
         if (binlimits):
-
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in dissipdata.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            dissipdata = dissipdata[lower[0]:upper[0],
-                                    lower[1]:upper[1],
-                                    lower[2]:upper[2], :, :]
+            dissipdata = self.trim_binlimits(binlimits, dissipdata)
 
         return  dissipdata
 
@@ -2158,21 +2105,8 @@ class MD_dTdrField(MD_complexField):
         dTdr = self.grad(Tdata,preavgaxes=preavgaxes)
 
         if (binlimits):
+            dTdr = self.trim_binlimits(binlimits, dTdr)
 
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in dTdr.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            dTdr = dTdr[lower[0]:upper[0],
-                        lower[1]:upper[1],
-                        lower[2]:upper[2], :, :]
 
         return dTdr
 
@@ -2210,21 +2144,7 @@ class MD_ufluctField(MD_complexField):
                                                       vdata[:,:,:,plusrec,0],lims)
 
         if (binlimits):
-
-            # Defaults
-            lower = [0]*3
-            upper = [i for i in u.shape] 
-    
-            for axis in range(3):
-                if (binlimits[axis] == None):
-                    continue
-                else:
-                    lower[axis] = binlimits[axis][0] 
-                    upper[axis] = binlimits[axis][1] 
-
-            u = u[lower[0]:upper[0],
-                  lower[1]:upper[1],
-                  lower[2]:upper[2], :, :]
+            u = self.trim_binlimits(binlimits, u)
 
 
         return u

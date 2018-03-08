@@ -91,7 +91,8 @@ class FieldChooserPanel(wx.Panel):
         # Plot type chooser box
         self.plottype_p = PlotTypePanel(self)    
         # Field type chooser box
-        self.fieldtype_p = FieldTypePanel(self, size = (-1, 400))
+        self.fieldtype_p = FieldTypePanel(self, size = (-1, 340))
+        #self.fieldtype_p.SetupScrolling(scrollToTop=False)
         # Component chooser combo box
         self.component_p = FieldComponentPanel(self)
         # Autoscale button

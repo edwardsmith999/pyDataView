@@ -143,6 +143,7 @@ class MD_PostProc(PostProc):
             self.plotlist.update({'vsnap':v1})
             v1 = MD_momField(self.resultsdir,fname='vsnap', **kwargs)
             self.plotlist.update({'rhou_snap':v1})
+            
 
         #VA stress
         if 'pVA_k' in (self.fieldfiles1):
@@ -323,6 +324,7 @@ class MD_PostProc(PostProc):
                 self.plotlist.update({'u^\prime':v1})
                 v1 = MD_vFieldatsurface(self.resultsdir, **kwargs)
                 self.plotlist.update({'u at surface':v1})
+
             except DataMismatch:
                 pass
 
@@ -378,7 +380,6 @@ class MD_PostProc(PostProc):
                 self.plotlist.update({'rhoT':T1})
             except DataMismatch:
                 pass
-
             try:
                 T1 = MD_TField(self.resultsdir, peculiar=False, **kwargs)
                 self.plotlist.update({'T_peculiar':T1})

@@ -11,10 +11,29 @@ class OpenFOAMField(Field):
 
     nhalos = [0, 0, 0]
 
-    def __init__(self, fdir, fname):
-        Raw = OpenFOAM_RawData(fdir, fname, self.nperbin)
+    def __init__(self, fdir, fname, parallel_run=True):
+        Raw = OpenFOAM_RawData(fdir, fname, 
+                               self.nperbin, parallel_run=parallel_run)
         Field.__init__(self, Raw)
         self.axislabels = ['x','y','z']
+        self.plotfreq = self.Raw.Nave
+
+class OpenFOAMdummyField(OpenFOAMField):
+
+    """
+        Dummy field object
+    """
+
+    dtype = 'd'
+    nperbin = 1
+
+    def __init__(self, fdir):
+        
+        self.fname = "dummy"
+        self.labels = ['scalar']
+        OpenFOAMField.__init__(self, fdir, self.fname)
+        self.labels = [""]
+        self.nperbin = 1
         self.plotfreq = 1
 
 # ============================================================================
@@ -23,8 +42,8 @@ class OpenFOAM_ScalarField(OpenFOAMField):
 
     nperbin = 1
 
-    def __init__(self, fdir, fname):
-        OpenFOAMField.__init__(self, fdir, fname)
+    def __init__(self, fdir, fname, parallel_run):
+        OpenFOAMField.__init__(self, fdir, fname, parallel_run)
         self.fname = fname
         self.labels = ['scalar']
 
@@ -32,8 +51,8 @@ class OpenFOAM_VectorField(OpenFOAMField):
 
     nperbin = 3 
 
-    def __init__(self, fdir, fname):
-        OpenFOAMField.__init__(self, fdir, fname)
+    def __init__(self, fdir, fname, parallel_run):
+        OpenFOAMField.__init__(self, fdir, fname, parallel_run)
         self.fname = fname
         self.labels = ['x', 'y', 'z']
 
@@ -41,8 +60,8 @@ class OpenFOAM_SymmTensorField(OpenFOAMField):
 
     nperbin = 6
 
-    def __init__(self, fdir, fname):
-        OpenFOAMField.__init__(self, fdir, fname)
+    def __init__(self, fdir, fname, parallel_run):
+        OpenFOAMField.__init__(self, fdir, fname, parallel_run)
         self.fname = fname
         self.labels = ['xx', 'xy', 'xz', "yy", "yz", "zz"]
 
@@ -84,6 +103,8 @@ class OpenFOAM_FField(OpenFOAMField):
     def __init__(self, fdir):
         OpenFOAMField.__init__(self, fdir, self.fname)
         self.labels = ['Fx', 'Fy', 'Fz']
+
+
 class OpenFOAM_PField(OpenFOAMField):
 
     nperbin = 1
@@ -92,6 +113,8 @@ class OpenFOAM_PField(OpenFOAMField):
     def __init__(self, fdir):
         OpenFOAMField.__init__(self, fdir, self.fname)
         self.labels = ['p']
+
+
 class OpenFOAM_epsField(OpenFOAMField):
 
     nperbin = 1

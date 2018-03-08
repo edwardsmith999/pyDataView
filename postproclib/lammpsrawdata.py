@@ -64,8 +64,6 @@ class LAMMPS_RawData(RawData):
     def get_readindices(self, readnames):
         
         self.fobj.seek(0)
-
-        
         self.fobj.readline()
         self.fobj.readline()
         line = self.fobj.readline()
@@ -73,7 +71,7 @@ class LAMMPS_RawData(RawData):
             readindices = []
             linesplit = line.split()[1:] # Ignore # character at beginning
             for name in readnames:
-                readindices.append(linesplit.index(name)) 
+                readindices.append(linesplit.index(name))
         else:
             print("Couldn't find Chunk coordinate info in "+self.fname)
             raise DataNotAvailable
@@ -182,8 +180,8 @@ class LAMMPS_RawData(RawData):
                     upper[axis] = binlimits[axis][1] 
 
             gridvolumes = gridvolumes[lower[0]:upper[0],
-                                    lower[1]:upper[1],
-                                    lower[2]:upper[2]]
+                                      lower[1]:upper[1],
+                                      lower[2]:upper[2]]
                 
         # Ensure gridvolumes is the right shape for subsequent
         # broadcasting with other fields

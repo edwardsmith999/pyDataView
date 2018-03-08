@@ -46,7 +46,7 @@ from pplexceptions import DataNotAvailable
 
 class MD_RawData(RawData):
     
-    def __init__(self,fdir,fname,dtype,nperbin):
+    def __init__(self, fdir, fname, dtype, nperbin):
 
         """
             fdir       -  file directory containing results, string
@@ -118,11 +118,11 @@ class MD_RawData(RawData):
         for ixyz in range(3):
             binsize = np.divide(domain[ixyz],gnbins[ixyz])
             binsizes.append(binsize)
-            botbincenter = binsize/2.0 
-            topbincenter = gnbins[ixyz]*binsize - binsize/2.0
+            botbincenter = - domain[ixyz]/2. + binsize/2.0
+            topbincenter = gnbins[ixyz]*binsize - domain[ixyz]/2. - binsize/2.0 
             binspaces.append(np.linspace(botbincenter,
-                                       topbincenter,
-                                       num=gnbins[ixyz]))
+                                         topbincenter,
+                                         num=gnbins[ixyz]))
 
         return gnbins, binspaces, binsizes
 
@@ -181,8 +181,8 @@ class MD_RawData(RawData):
                     upper[axis] = binlimits[axis][1] 
 
             gridvolumes = gridvolumes[lower[0]:upper[0],
-                                    lower[1]:upper[1],
-                                    lower[2]:upper[2]]
+                                      lower[1]:upper[1],
+                                      lower[2]:upper[2]]
                 
         # Ensure gridvolumes is the right shape for subsequent
         # broadcasting with other fields
@@ -214,6 +214,7 @@ class MD_RawData(RawData):
         else:
             print('Neither ' + self.fname + ' nor ' + self.fname + '.* exist.')
             sys.exit
+
 
         return maxrec
 

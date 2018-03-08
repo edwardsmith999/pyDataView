@@ -10,3 +10,5 @@ class DataMismatch(Exception):
 class ScriptMissing(Exception):
     pass
 
+class OutsideRecRange(Exception):
+    pass
