@@ -3,7 +3,7 @@ import numpy as np
 import os
 
 from rawdata import RawData
-from headerdata import HeaderData
+from headerdata import openfoam_HeaderData
 from pplexceptions import DataNotAvailable
 
 class OpenFOAM_RawData(RawData):
@@ -36,7 +36,8 @@ class OpenFOAM_RawData(RawData):
         self.delta_t = ( float(self.reclist[1].replace("/",""))
                         -float(self.reclist[0].replace("/","")))
         #Mock header data needed for vmdfields
-        self.header = HeaderData([])
+        self.header = openfoam_HeaderData(fdir)
+        print(self.header.headerDict.keys())
         tplot = 1
         skip = 1
         initialstep = 0
@@ -256,10 +257,17 @@ class OpenFOAM_RawData(RawData):
     
             return herelist
 
+        found = False
         entryname = str(ncells)
         for line in fobj:
             if (entryname in line):
                 flist = read_list(fobj, ncells)
+                found = True
+
+        #If entryname is not found in file, data is not available
+        if (not found):
+            print("Entry for number of cells ", entryname, " not consistent with file ", fobj.name )
+            raise IOError
 
         return flist
 

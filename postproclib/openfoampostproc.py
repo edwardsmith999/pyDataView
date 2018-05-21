@@ -16,9 +16,9 @@ class OpenFOAM_PostProc(PostProc):
 
         # Check directory exists before instantiating object and check 
         # which files associated with plots are in directory
-#        if (not os.path.isdir(self.resultsdir)):
-#            print("Directory " +  self.resultsdir + " not found")
-#            raise IOError
+        if (not os.path.isdir(self.resultsdir)):
+            print("Directory " +  self.resultsdir + " not found")
+            raise IOError
 
 #        # Raise if no results in directory
 #        try:
@@ -40,9 +40,12 @@ class OpenFOAM_PostProc(PostProc):
         #We need to take the first record as lots of fields are not
         #defined in the initial condition..
         parallel_run = False
+        controlDictfound = False
         #possibles = []
+        writecontrol =''
         for root, dirs, files in os.walk(self.resultsdir):
             if ("controlDict" in files):
+                controlDictfound = True
                 with open(root+"/controlDict") as f:
                     for line in f:
 
@@ -66,9 +69,10 @@ class OpenFOAM_PostProc(PostProc):
             if "processor" in root and not parallel_run:
                 parallel_run = True
                 print("Assuming parallel run as processor folder found in " + self.resultsdir)
-#                possibles += files
-        #possibles  = list(set(possibles))
 
+        #Check if data files exist
+        if not controlDictfound:
+            raise NoResultsInDir
 
         if "timeStep" in writecontrol:
             writeInterval = writeInterval*deltaT
@@ -109,8 +113,8 @@ class OpenFOAM_PostProc(PostProc):
                                 S = OpenFOAM_SymmTensorField(self.resultsdir, fname, parallel_run)
                             else:
                                 continue
-                            #print(filename, fname, S)
             except IOError:
+                print("Error reading ", filename)
                 pass
 
             self.plotlist.update({fname:S})

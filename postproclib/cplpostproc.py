@@ -114,15 +114,11 @@ class CPL_PostProc(PostProc):
                       + ' for ' + MDkey + ' and ' + CFDkey)
 
                 try:
-                    self.plotlist[CPLkey] = CPLfieldtype( 
-
-                        self.resultsdir,
-                        MDFieldType=type_dicts[CPLkey][MDkey],
-                        CFDFieldType=type_dicts[CPLkey][CFDkey],
-                        mddir=resultsdirs[MDkey],
-                        cfddir=resultsdirs[CFDkey]
-
-                    )
+                    self.plotlist[CPLkey] = CPLfieldtype(self.resultsdir,
+                                                         MDFieldType=type_dicts[CPLkey][MDkey],
+                                                         CFDFieldType=type_dicts[CPLkey][CFDkey],
+                                                         mddir=resultsdirs[MDkey],
+                                                         cfddir=resultsdirs[CFDkey])
 
                 except AssertionError:
                     pass
