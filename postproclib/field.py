@@ -1,10 +1,5 @@
 #! /usr/bin/env python
 import numpy as np
-import scipy.ndimage
-import scipy.interpolate as interp
-import scipy.ndimage.interpolation as interp2
-from scipy.ndimage import map_coordinates
-from scipy.interpolate import RegularGridInterpolator
 import matplotlib.pyplot as plt
 import sys
 
@@ -569,6 +564,7 @@ class Field():
         """
             Map data on a linear grid to a cosine grid 
         """
+        import scipy.interpolate as interp
         ycells = np.linspace(0, Ny, Ny)
         ylin = np.linspace(a, b, Ny)
         ycos = 0.5*(b+a) - 0.5*(b-a)*np.cos((ycells*np.pi)/(Ny-1))
@@ -585,6 +581,7 @@ class Field():
             """
                 Map data on a cosine grid to a linear grid 
             """
+            import scipy.interpolate as interp
             ycells = np.linspace(0, Ny, Ny)
             ylin = np.linspace(a, b, Ny)
             ycos = 0.5*(b+a) - 0.5*(b-a)*np.cos((ycells*np.pi)/(Ny-1))
@@ -593,6 +590,7 @@ class Field():
             values_on_linear_grid = interp.griddata(ycos, values_on_cosine_grid, 
                                                     ylin, method='cubic',
                                                     fill_value=values_on_cosine_grid[-1])
+            #from scipy.ndimage import map_coordinates
             #values_on_linear_grid = interp2.map_coordinates(values_on_cosine_grid,ycos,output=ylin)
             #plt.plot(ylin,values_on_linear_grid,'o-',alpha=0.4,label='cosinetolinear After')
             #plt.legend()
@@ -600,6 +598,8 @@ class Field():
             return values_on_linear_grid
 
     def field_interpolator(self, celldata):
+
+        from scipy.interpolate import RegularGridInterpolator
 
         #Need to turn off bounds errors and fill values to allow extrapolation
         fn = RegularGridInterpolator((self.grid[0], self.grid[1], self.grid[2]),
@@ -632,8 +632,8 @@ class Field():
            cell centred data - currently uses zoom for simplicity
 
         """
-
         if method is "zoom":
+            import scipy.ndimage
             Nx, Ny, Nz = celldata.shape[0], celldata.shape[1], celldata.shape[2]
             vertexdata = scipy.ndimage.zoom(celldata,((Nx+1)/float(Nx),
                                                       (Ny+1)/float(Ny),
