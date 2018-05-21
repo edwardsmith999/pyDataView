@@ -1,6 +1,5 @@
 #! /usr/bin/env python
 import numpy as np
-import matplotlib.pyplot as plt
 import sys
 
 from pplexceptions import OutsideRecRange
@@ -560,7 +559,7 @@ class Field():
 
         return lindata
 
-    def map_data_lineartocosine(self,values_on_linear_grid,Ny,a,b):
+    def map_data_lineartocosine(self, values_on_linear_grid, Ny, a, b, plot=False):
         """
             Map data on a linear grid to a cosine grid 
         """
@@ -568,13 +567,16 @@ class Field():
         ycells = np.linspace(0, Ny, Ny)
         ylin = np.linspace(a, b, Ny)
         ycos = 0.5*(b+a) - 0.5*(b-a)*np.cos((ycells*np.pi)/(Ny-1))
-        plt.plot(ylin,values_on_linear_grid,'o-',alpha=0.4,label='lineartocosine Before')
         values_on_cosine_grid = interp.griddata(ylin, values_on_linear_grid, 
                                                 ycos, method='cubic',
                                                 fill_value=values_on_linear_grid[-1])
-        plt.plot(ycos,values_on_cosine_grid,'x-',label='lineartocosine After')
-        plt.legend()
-        plt.show()
+        if plot:
+            import matplotlib.pyplot as plt
+            plt.plot(ylin,values_on_linear_grid,'o-',alpha=0.4,label='lineartocosine Before')
+
+            plt.plot(ycos,values_on_cosine_grid,'x-',label='lineartocosine After')
+            plt.legend()
+            plt.show()
         return values_on_cosine_grid
 
     def map_data_cosinetolinear(self,values_on_cosine_grid,Ny,a,b):
