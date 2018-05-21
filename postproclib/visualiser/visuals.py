@@ -223,7 +223,7 @@ class VisualiserPanel(wx.Panel):
         try:
             #Set component to zero if existing one is too large
             if (len(self.field.labels) < self.component+1):
-        self.component = 0
+                self.component = 0
         except AttributeError:
             #Define component to 0 if doesn't exist
             self.component = 0
