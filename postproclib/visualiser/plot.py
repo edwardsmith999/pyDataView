@@ -13,19 +13,33 @@ class PyplotPanel(wx.Panel):
         wx.Panel.__init__(self,parent,**kwargs)
         self.parent = parent
         self.figure = matplotlib.figure.Figure()
-        self.canvas = wxaggb.FigureCanvasWxAgg(self, -1, self.figure)
+        self.canvas = wxaggb.FigureCanvas(self, -1, self.figure)
+
         self.sizer = wx.BoxSizer(wx.VERTICAL)
-        self.sizer.Add(self.canvas, 1, wx.LEFT | wx.TOP | wx.GROW)
-        self.Bind(wx.EVT_SIZE, self.sizeHandler)
-
-        # canvas is your canvas, and root is your parent (Frame, TopLevel, Tk instance etc.)
-        #self.zoomhandle = wxaggb.NavigationToolbar2WxAgg(self.canvas)
-
-        #self.toolbar = wxb.NavigationToolbar2Wx(self.canvas) 
-        #self.toolbar.Realize()
-        #self.toolbar.update()
+        self.add_toolbar()
+        #If we add this, the chart toolbar does not work
+        #self.Bind(wx.EVT_SIZE, self.sizeHandler)
 
         self.cmap = matplotlib.cm.RdYlBu_r
+
+    def add_toolbar(self):
+
+        #Set up Matplotlib Toolbar
+        self.chart_toolbar = wxb.NavigationToolbar2Wx(self.canvas)
+        tw, th = self.chart_toolbar.GetSizeTuple()
+        fw, fh = self.canvas.GetSizeTuple()
+        self.chart_toolbar.SetSize(wx.Size(fw, th))
+        self.chart_toolbar.Realize()
+
+        self.sizer.Add(self.chart_toolbar, 1, 
+                       wx.ALIGN_CENTER | wx.TOP| wx.SYSTEM_MENU | wx.CLOSE_BOX)
+        self.sizer.Add(self.canvas, 20, wx.LEFT | wx.BOTTOM | wx.GROW)
+
+        self.SetSizer(self.sizer)
+        self.chart_toolbar.update()
+        self.canvas.Update()
+        self.canvas.Refresh()
+        self.Update()
 
     def sizeHandler(self, event):
         self.canvas.SetSize(self.GetSize())
