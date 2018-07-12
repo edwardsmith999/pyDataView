@@ -33,11 +33,13 @@ class OpenFOAM_RawData(RawData):
         self.fname = fname
         self.npercell = nperbin #self.get_npercell()
         self.nu = self.get_nu()
-        self.delta_t = ( float(self.reclist[1].replace("/",""))
-                        -float(self.reclist[0].replace("/","")))
+        if len(self.reclist) > 1:
+            self.delta_t = ( float(self.reclist[1].replace("/",""))
+                            -float(self.reclist[0].replace("/","")))
+        else:
+            raise DataNotAvailable
         #Mock header data needed for vmdfields
         self.header = openfoam_HeaderData(fdir)
-        print(self.header.headerDict.keys())
         tplot = 1
         skip = 1
         initialstep = 0

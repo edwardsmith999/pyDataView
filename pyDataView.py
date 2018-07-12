@@ -33,7 +33,7 @@ def run_visualiser(parent_parser=argparse.ArgumentParser(add_help=False)):
 
     parser.add_argument('-d', '--fdir', dest='fdir', 
                         help='Directory containing results', 
-                        default='../flowmol/src/results/')
+                        default='./')
 
     args = vars(parser.parse_args())
 
