@@ -36,7 +36,6 @@ class OpenFOAM_RawData(RawData):
         self.maxrec = len(self.reclist) - 1 # count from 0
         self.fname = fname
         self.npercell = nperbin #self.get_npercell()
-
         #Mock header data needed for vmdfields
         self.header = openfoam_HeaderData(fdir)
         self.delta_t = self.header.headerDict['controlDict']["deltaT"]
@@ -96,7 +95,7 @@ class OpenFOAM_RawData(RawData):
                           ) 
         return array
 
-    def reshape_list_to_cells(self, inputlist, npercell, glob=False, surface=False):
+    def reshape_list_to_cells(self, inputlist, npercell, glob=False):
         # Lists from OpenFOAM seem to be written in Fortran order, for some
         # reason
         if glob:
@@ -109,7 +108,6 @@ class OpenFOAM_RawData(RawData):
             z = int(self.ncz/float(self.procxyz[2]))
 
         array = np.reshape(inputlist, (x, y, z,npercell), order='F') 
-
         return array
 
 #    def read_list(self, fobj):
@@ -189,6 +187,7 @@ class OpenFOAM_RawData(RawData):
         return flist
 
     def read_list_from_here(self, fobj_list, kwl):
+
         nitems = int(fobj_list[kwl+1])
         checkopenbracket = fobj_list[kwl+2]
         if (checkopenbracket[0] != '('):
@@ -287,7 +286,7 @@ class OpenFOAM_RawData(RawData):
             fobj = open(self.fdir+'/system/decomposeParDict','r')
         except IOError:
             return np.ones(3)
-            
+
         alltxt = fobj.readlines()
         for n,line in enumerate(alltxt):
             if line[0:12] == 'simpleCoeffs':
@@ -498,7 +497,6 @@ class OpenFOAM_RawData(RawData):
 
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
-
 
                 with open(fpath,'r') as fobj:
                     vlist = self.read_list_named_entry(fobj, 'internalField')

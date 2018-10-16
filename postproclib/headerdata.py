@@ -59,7 +59,6 @@ class openfoam_HeaderData:
 
         headerDict = {}
         for filename in readfiles:
-            #print("Reading ", filename)
             if os.path.isfile(filename):
                 with open(filename) as f:
                     lines = self.lines_generator_strip(f)
