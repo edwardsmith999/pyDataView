@@ -4,7 +4,7 @@ import os
 
 from rawdata import RawData
 from headerdata import openfoam_HeaderData
-from pplexceptions import DataNotAvailable
+from pplexceptions import DataNotAvailable, OutsideRecRange
 
 class OpenFOAM_RawData(RawData):
     
@@ -20,7 +20,11 @@ class OpenFOAM_RawData(RawData):
                 self.parallel_run = True
             else:
                 self.parallel_run = False
-        elif parallel_run or not parallel_run:
+        elif parallel_run:
+            self.parallel_run = parallel_run
+            self.procxyz = self.get_proc_topology()
+            self.procs = int(np.product(self.procxyz))
+        elif not parallel_run:
             self.parallel_run = parallel_run
             self.procxyz = np.ones(3)
             self.procs = 1
@@ -32,12 +36,12 @@ class OpenFOAM_RawData(RawData):
         self.maxrec = len(self.reclist) - 1 # count from 0
         self.fname = fname
         self.npercell = nperbin #self.get_npercell()
-        self.nu = self.get_nu()
-        self.delta_t = ( float(self.reclist[1].replace("/",""))
-                        -float(self.reclist[0].replace("/","")))
+
         #Mock header data needed for vmdfields
         self.header = openfoam_HeaderData(fdir)
-        print(self.header.headerDict.keys())
+        self.delta_t = self.header.headerDict['controlDict']["deltaT"]
+        self.nu = self.header.headerDict['transportProperties']["nu"]  #self.get_nu()
+ 
         tplot = 1
         skip = 1
         initialstep = 0
@@ -92,19 +96,20 @@ class OpenFOAM_RawData(RawData):
                           ) 
         return array
 
-    def reshape_list_to_cells(self, inputlist, npercell, glob=False):
+    def reshape_list_to_cells(self, inputlist, npercell, glob=False, surface=False):
         # Lists from OpenFOAM seem to be written in Fortran order, for some
         # reason
         if glob:
-            array = np.reshape(inputlist, 
-                               (int(self.ncx), int(self.ncy), int(self.ncz), 
-                                npercell), order='F') 
+            x = int(self.ncx)
+            y = int(self.ncy)
+            z = int(self.ncz)
         else:
-            array = np.reshape(inputlist, 
-                               (int(self.ncx/float(self.procxyz[0])), 
-                                int(self.ncy/float(self.procxyz[1])), 
-                                int(self.ncz/float(self.procxyz[2])), 
-                                npercell), order='F') 
+            x = int(self.ncx/float(self.procxyz[0]))
+            y = int(self.ncy/float(self.procxyz[1]))
+            z = int(self.ncz/float(self.procxyz[2]))
+
+        array = np.reshape(inputlist, (x, y, z,npercell), order='F') 
+
         return array
 
 #    def read_list(self, fobj):
@@ -184,7 +189,6 @@ class OpenFOAM_RawData(RawData):
         return flist
 
     def read_list_from_here(self, fobj_list, kwl):
-
         nitems = int(fobj_list[kwl+1])
         checkopenbracket = fobj_list[kwl+2]
         if (checkopenbracket[0] != '('):
@@ -210,7 +214,7 @@ class OpenFOAM_RawData(RawData):
 
     def read_list_named_entry(self, fobj, entryname):
 
-        fobj_list = fobj.read().splitlines()           
+        fobj_list = fobj.read().splitlines()
         # Find entryname
         for i, line in enumerate(fobj_list):
             if (entryname in line):
@@ -232,7 +236,7 @@ class OpenFOAM_RawData(RawData):
                             return flist
     
                         elif "nonuniform List" in nline:
-                            flist = self.read_list_from_here(fobj, i+count)
+                            flist = self.read_list_from_here(fobj_list, i+count+1)
                             return flist
 
         return []
@@ -283,7 +287,7 @@ class OpenFOAM_RawData(RawData):
             fobj = open(self.fdir+'/system/decomposeParDict','r')
         except IOError:
             return np.ones(3)
-
+            
         alltxt = fobj.readlines()
         for n,line in enumerate(alltxt):
             if line[0:12] == 'simpleCoeffs':
@@ -392,7 +396,9 @@ class OpenFOAM_RawData(RawData):
                 self.maxz[proc] = np.max(ctemp[0,0,:,0]-self.minx[proc])/(ctemp.shape[0]*ctemp.shape[1])+1
                 # THIS DOES NOT WORK WITH VARIABLE Z PROCESSORS!!!!!!!!!!!
 
-                #print(proc, self.minx[proc],self.maxx[proc],self.miny[proc],self.maxy[proc],self.minz[proc],self.maxz[proc],nperprocx,nperprocy,nperprocz,ctemp.shape)
+                #print(proc, self.minx[proc],self.maxx[proc],self.miny[proc],
+                #            self.maxy[proc],self.minz[proc],self.maxz[proc],
+                #            nperprocx,nperprocy,nperprocz,ctemp.shape)
 
         # Return list of cell-centre locations in each direction
         gridx = np.linspace(self.dx/2., self.xL - self.dx/2., num=self.ncx)
@@ -448,6 +454,36 @@ class OpenFOAM_RawData(RawData):
                     fdir = self.fdir+"processor" + str(proc) + "/"
                     fpath = fdir + self.reclist[startrec+plusrec] + self.fname
 
+                    try:
+                        with open(fpath,'r') as fobj:
+                            vlist = self.read_list_named_entry(fobj, 'internalField')
+                            #Case when field is constant has a single value
+                            if len(vlist) is self.npercell:
+                                for dim in range(self.npercell):
+                                    odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                            else:
+                                # Loop through cellProcAddress mapping and assign
+                                # values to global cells
+                                for i in range(len(vlist)):
+                                    olist[int(self.cellmap[proc][i]),:] = vlist[i]
+
+                                #Reshape global list to cells
+                                vtemp = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
+                                odata[:,:,:,plusrec,:] = vtemp
+
+                    except IOError:
+                        if use_pyfoam:
+                            # Commented this out as it's slower than custom routines...
+                            try:
+                                from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
+                                with ParsedParameterFile(fpath) as f:
+                                    odata[:,:,:,plusrec,:] = np.array(f['internalField']).reshape([self.ncx, self.ncy, self.ncz, self.npercell])
+                            except ImportError:
+                                print("Failed to load PyFoam, falling back on PyDataView reader")
+
+                        else:
+                            raise
+    
                     #Try a quick read based on assumed data format, otherwise switch 
 #                    try:
 #                        data = np.genfromtxt(fpath, skip_footer=self.ncx*self.ncz+36, skip_header=22) #64 by 64 footer of 4134
@@ -458,24 +494,11 @@ class OpenFOAM_RawData(RawData):
 #                    except:
 #                        print("Quick read failed")
 #                        raise
-                    with open(fpath,'r') as fobj:
-                        vlist = self.read_list_named_entry(fobj, 'internalField')
-                        #Case when field is constant has a single value
-                        if len(vlist) is self.npercell:
-                            for dim in range(self.npercell):
-                                odata[:,:,:,plusrec,dim] = float(vlist[dim])
-                        else:
-                            # Loop through cellProcAddress mapping and assign
-                            # values to global cells
-                            for i in range(len(vlist)):
-                                olist[int(self.cellmap[proc][i]),:] = vlist[i]
 
-                            #Reshape global list to cells
-                            vtemp = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
-                            odata[:,:,:,plusrec,:] = vtemp
 
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
+
 
                 with open(fpath,'r') as fobj:
                     vlist = self.read_list_named_entry(fobj, 'internalField')
@@ -483,6 +506,8 @@ class OpenFOAM_RawData(RawData):
                     if len(vlist) is self.npercell:
                         for dim in range(self.npercell):
                             odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                    elif len(vlist) == 0:
+                        odata[:,:,:,plusrec,:] = 0.
                     else:
                         vtemp = self.reshape_list_to_cells(vlist, self.npercell)
                         odata[:,:,:,plusrec,:] = vtemp 
@@ -511,7 +536,7 @@ class OpenFOAM_RawData(RawData):
          
         return odata
 
-    def read_halo(self, startrec, endrec, **kwargs):
+    def read_halo(self, startrec, endrec, haloname, **kwargs):
 
 
         """
@@ -535,13 +560,15 @@ class OpenFOAM_RawData(RawData):
 
                     with open(fpath,'r') as fobj:
                         #Skip to line with cplrecvMD
-                        vlist = self.read_list_named_entry(fobj, "CPLReceiveMD")
+                        vlist = self.read_list_named_entry(fobj, haloname)
                         if len(vlist) is self.npercell:
                             for dim in range(self.npercell):
                                 odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                        elif len(vlist) == 0:
+                            odata[:,:,:,plusrec,:] = 0.
                         else:
-                            npx = self.procxyz[0]
-                            npz = self.procxyz[2]
+                            npx = int(self.procxyz[0])
+                            npz = int(self.procxyz[2])
                             nx = int(self.ncx/float(npx))
                             nz = int(self.ncx/float(npz))
                             vtemp = np.reshape(vlist, (nx, 1, nz, self.npercell), order='F')
@@ -552,10 +579,10 @@ class OpenFOAM_RawData(RawData):
 #                            minz = np.floor(proc/npx)*nz
 #                            maxz = np.floor(proc/npx+1)*nz
 
-                            minx = np.floor(proc/npx)*nz
-                            maxx = np.floor(proc/npx+1)*nz
-                            minz = proc%npx*nx
-                            maxz = (proc%npx+1)*nx
+                            minx = int(np.floor(proc/npx)*nz)
+                            maxx = int(np.floor(proc/npx+1)*nz)
+                            minz = int(proc%npx*nx)
+                            maxz = int((proc%npx+1)*nx)
 
                             #Use processor extents to slot into array
                             odata[minx:maxx, 0:1, minz:maxz, plusrec, :] = vtemp
@@ -567,6 +594,8 @@ class OpenFOAM_RawData(RawData):
                     if len(vlist) is self.npercell:
                         for dim in range(self.npercell):
                             odata[:,:,:,plusrec,dim] = float(vlist[dim])
+                    elif len(vlist) == 0:
+                        odata[:,:,:,plusrec,:] = 0.
                     else:
                         vtemp = self.reshape_list_to_cells(vlist, self.npercell)
                         odata[:,0:1,:,plusrec,:] = vtemp
