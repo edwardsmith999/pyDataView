@@ -1,10 +1,17 @@
 # pyDataView
-Data Viewer GUI written in python, wxpython and matplotlib.
+
+"A graphical user interface for people who hate graphical user interfaces"
+
+If you know how to read your data by writing Python code, PyDataView simply provides a way to quickly explore the data with a slider/file viewer. Once you see something you like, click Save Script to generate a starting point for further analysis.
+
+## Introduction
+
+A Data Viewer GUI written in python, wxpython and matplotlib.
 
 This is a lightweight interface for quick insight into scientific data.
 Data can be explored as a matplotlib lineplot or contour using sliders to traverse the range of existing records and bins.
 For more detailed analysis, a figure can be saved, the data output as a csv file or a minimal python script generated.
-The emphasis of this project is the provision of a simple reader to get data into python, a minimal GUI to get quick insight into that data and generation of python scripts for more detailed analysis. 
+The emphasis of this project is the provision of a simple reader to get data into python, a minimal GUI to get quick insight into that data and generation of python scripts for more detailed analysis.
 
 ## Quickstart
 
