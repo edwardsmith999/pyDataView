@@ -10,7 +10,7 @@ class OpenFOAM_PostProc(PostProc):
         Post processing class for CFD runs
     """
 
-    def __init__(self,resultsdir,**kwargs):
+    def __init__(self, resultsdir, **kwargs):
         self.resultsdir = resultsdir
         self.plotlist = {} 
 
@@ -35,7 +35,7 @@ class OpenFOAM_PostProc(PostProc):
 #            try:
 #                self.plotlist[key] = field(self.resultsdir)
 #            except AssertionError:
-#                pass 
+#                pass
 
         #We need to take the first record as lots of fields are not
         #defined in the initial condition..
@@ -48,23 +48,25 @@ class OpenFOAM_PostProc(PostProc):
                 controlDictfound = True
                 with open(root+"/controlDict") as f:
                     for line in f:
+                        try:
+                            if "writeControl" in line:
+                                writecontrol = (line.replace("\t"," ")
+                                                    .replace(";","")
+                                                    .replace("\n","")
+                                                    .split(" ")[-1])
+                            if "writeInterval" in line:
+                                writeInterval = float(line.replace("\t"," ")
+                                                          .replace(";","")
+                                                          .replace("\n","")
+                                                          .split(" ")[-1])
 
-                        if "writeControl" in line:
-                            writecontrol = (line.replace("\t"," ")
-                                                .replace(";","")
-                                                .replace("\n","")
-                                                .split(" ")[-1])
-                        if "writeInterval" in line:
-                            writeInterval = float(line.replace("\t"," ")
-                                                      .replace(";","")
-                                                      .replace("\n","")
-                                                      .split(" ")[-1])
-
-                        if "deltaT" in line:
-                            deltaT = float(line.replace("\t"," ")
-                                               .replace(";","")
-                                               .replace("\n","")
-                                               .split(" ")[-1])
+                            if "deltaT" in line:
+                                deltaT = float(line.replace("\t"," ")
+                                                   .replace(";","")
+                                                   .replace("\n","")
+                                                   .split(" ")[-1])
+                        except ValueError:
+                            print("Convert failed in OpenFOAM_reader", line)
 
             if "processor" in root and not parallel_run:
                 parallel_run = True
@@ -98,7 +100,6 @@ class OpenFOAM_PostProc(PostProc):
         self.plotlist = {}
         files = glob.glob(path)
 
-        #files = glob.glob(self.resultsdir + '0/*')
         for filename in files:
             try:
                 with open(filename) as f:
@@ -107,16 +108,21 @@ class OpenFOAM_PostProc(PostProc):
                             fname = filename.split("/")[-1]
                             if "volScalarField" in line:
                                 S = OpenFOAM_ScalarField(self.resultsdir, fname, parallel_run)
-                            elif "volVectorField":
+                            elif "volVectorField" in line:
                                 S = OpenFOAM_VectorField(self.resultsdir, fname, parallel_run)
-                            elif "volSymmTensorField":
+                            elif "volSymmTensorField" in line:
                                 S = OpenFOAM_SymmTensorField(self.resultsdir, fname, parallel_run)
+                            elif "surfaceScalarField" in line:
+                                print(filename, "is a surfaceScalarField")
                             else:
                                 continue
+                    self.plotlist.update({fname:S})
             except IOError:
                 print("Error reading ", filename)
                 pass
-
-            self.plotlist.update({fname:S})
-
+            except IndexError:
+                print("Error reading ", filename)
+                pass
+            except:
+                raise
 

@@ -211,6 +211,22 @@ class OpenFOAM_RawData(RawData):
 
         return herelist
 
+    def read_list_on_line(self, line, entryname):
+        indx = line.find("(")
+        #Check for vectors
+        if line[indx+1:].find("(") != -1:
+            flist = []
+            for term in line[indx+1:].split('('):
+                vec = term.replace("(","").replace(")","").replace(";","").split()
+                if vec == []:
+                    continue
+                flist.append([float(v) for v in vec])
+            return flist
+        #Otherwise a list of scalars on this line
+        else:
+            flist = line[indx:].replace("(","").replace(")","").replace(";","").split()
+            return [float(i) for i in flist]
+
     def read_list_named_entry(self, fobj, entryname):
 
         fobj_list = fobj.read().splitlines()
@@ -218,7 +234,10 @@ class OpenFOAM_RawData(RawData):
         for i, line in enumerate(fobj_list):
             if (entryname in line):
                 if "nonuniform List" in line:
-                    flist = self.read_list_from_here(fobj_list, i)
+                    if (("(" in line) and (")" in line)):
+                        flist = self.read_list_on_line(line, entryname)
+                    else:
+                        flist = self.read_list_from_here(fobj_list, i)
                     return flist
                 elif " uniform 0" in line:
                     flist = [0]
@@ -240,10 +259,18 @@ class OpenFOAM_RawData(RawData):
 
         return []
 
+
     def read_cells(self, fobj, ncells):
 
+        def read_list(fobj, nitems, line):
 
-        def read_list(fobj, nitems):
+            #Check not all on same line
+            if nitems < 20:
+                if (("(" in line) and (")" in line)):
+                    print(line)
+                    flist = self.read_list_on_line(line, entryname)
+                    print(flist)
+                return flist
 
             checkopenbracket = fobj.next()
             if (checkopenbracket[0] != '('):
@@ -264,7 +291,7 @@ class OpenFOAM_RawData(RawData):
         entryname = str(ncells)
         for line in fobj:
             if (entryname in line):
-                flist = read_list(fobj, ncells)
+                flist = read_list(fobj, ncells, line)
                 found = True
 
         #If entryname is not found in file, data is not available

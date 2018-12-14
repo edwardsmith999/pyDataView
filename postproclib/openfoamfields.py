@@ -12,8 +12,8 @@ class OpenFOAMField(Field):
     nhalos = [0, 0, 0]
 
     def __init__(self, fdir, fname, parallel_run=None):
-        Raw = OpenFOAM_RawData(fdir, fname, 
-                               self.nperbin, 
+        Raw = OpenFOAM_RawData(fdir, fname,
+                               self.nperbin,
                                parallel_run=parallel_run)
         Field.__init__(self, Raw)
         self.axislabels = ['x','y','z']
@@ -65,6 +65,19 @@ class OpenFOAM_SymmTensorField(OpenFOAMField):
         OpenFOAMField.__init__(self, fdir, fname, parallel_run)
         self.fname = fname
         self.labels = ['xx', 'xy', 'xz', "yy", "yz", "zz"]
+
+
+#class OpenFOAM_surfaceScalarField(OpenFOAMField):
+
+#    The total size is 3 x 7 x 8 x 8, not clear how we parse this...
+
+#    nperbin = 6
+
+#    def __init__(self, fdir, fname, parallel_run=None):
+#        OpenFOAMField.__init__(self, fdir, fname, parallel_run)
+#        self.fname = fname
+#        self.labels = ["xbottom","ybottom","zbottom",
+#                        "xtop","ytop","ztop"]
 
 # ============================================================================
 # OpenFOAMField derived classes, but calculated by the main code
