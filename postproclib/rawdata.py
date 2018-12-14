@@ -15,13 +15,6 @@ class RawData(object):
         This header contains necessary 
         information that is used to reshape the 1D array of data read 
         from the file into a format that is easy to process later on.
-           
-        The header variable cpol_bins is true if the data has been
-        averaged in the MD code using cylindrical polar bins: in this 
-        case the only difference lies in creating the mesh of the 
-        bin topology, because the domain size in cylindrical polar
-        coordinates is different to the cartesian domain size that is
-        written to the simulation_header.
 
         This class is designed for use in two ways:
             

@@ -11,10 +11,10 @@ from channelflowpostproc import *
 
 from serial_cfdfields import *
 
+from cplfields import *
+from cplpostproc import *
 from pplexceptions import *
 
-#from vmdfields import *
-#from build_vmd_polymer_psf import *
 
 from openfoamfields import *
 from openfoampostproc import *
