@@ -595,7 +595,7 @@ class OpenFOAM_RawData(RawData):
                             npx = int(self.procxyz[0])
                             npz = int(self.procxyz[2])
                             nx = int(self.ncx/float(npx))
-                            nz = int(self.ncx/float(npz))
+                            nz = int(self.ncz/float(npz))
                             vtemp = np.reshape(vlist, (nx, 1, nz, self.npercell), order='F')
 
                             #Assume it must be slip as function of x and z only
@@ -604,10 +604,10 @@ class OpenFOAM_RawData(RawData):
 #                            minz = np.floor(proc/npx)*nz
 #                            maxz = np.floor(proc/npx+1)*nz
 
-                            minx = int(np.floor(proc/npx)*nz)
-                            maxx = int(np.floor(proc/npx+1)*nz)
-                            minz = int(proc%npx*nx)
-                            maxz = int((proc%npx+1)*nx)
+                            minz = int(np.floor(proc/npx)*nz)
+                            maxz = int(np.floor(proc/npx+1)*nz)
+                            minx = int(proc%npx*nx)
+                            maxx = int((proc%npx+1)*nx)
 
                             #Use processor extents to slot into array
                             odata[minx:maxx, 0:1, minz:maxz, plusrec, :] = vtemp
