@@ -153,8 +153,8 @@ ppdir = '{0}'
 sys.path.append(ppdir)
 import postproclib as ppl
 
-normal ={3}
-component={6}
+normal ={6}
+component={3}
 startrec={4}
 endrec={5}
 
