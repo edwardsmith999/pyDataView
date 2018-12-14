@@ -2091,8 +2091,8 @@ class MD_dissipField(MD_complexField):
 
 class MD_dTdrField(MD_complexField):
 
-    def __init__(self,fdir,rectype='bins'):
-        self.TField = MD_TField(fdir)
+    def __init__(self,fdir,rectype='bins', peculiar=True):
+        self.TField = MD_TField(fdir, peculiar=peculiar)
 
         Field.__init__(self,self.TField.Raw)
         self.inherit_parameters(self.TField)
