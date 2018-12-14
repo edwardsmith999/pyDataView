@@ -92,6 +92,8 @@ class CPLField(Field):
         md_dy, md_yL = self.get_d_and_L(md_grid[1])
         olap_yL = self.olap_cells[1] * self.cfd_dxyz[1]
         cfd_grid[1] += md_yL - olap_yL
+        #Adjust md_grid to zero origin
+        md_grid[1] = md_grid[1] - md_grid[1][0] + md_dy/2.
 
         return md_grid, cfd_grid  
 
@@ -107,7 +109,7 @@ class CPLField(Field):
         gridx = (np.arange(0,self.cpl_cells[0])+0.5)*self.cpl_dxyz[0]
         gridy = (np.arange(0,self.cpl_cells[1])+0.5)*self.cpl_dxyz[1]
         gridz = (np.arange(0,self.cpl_cells[2])+0.5)*self.cpl_dxyz[2]
-        grid = [gridx,gridy,gridz]
+        grid = [gridx, gridy, gridz]
         return grid
         
     def read(self,startrec,endrec,binlimits=None,**kwargs):
