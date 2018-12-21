@@ -220,13 +220,24 @@ class VisualiserPanel(wx.Panel):
         except AttributeError:
             self.choosep.component_p.componentcombobox.AppendItems(
                 [str(x) for x in range(self.field.nperbin)])
+
         try:
             #Set component to zero if existing one is too large
+            #print("Check", len(self.field.labels), self.component, self.prev_component)
             if (len(self.field.labels) < self.component+1):
+                self.prev_component = self.component
+                #print("Saving previous component", self.component)
                 self.component = 0
+            elif (len(self.field.labels) > self.prev_component and
+                self.prev_component != self.component):
+                #print("loading previous component", self.prev_component)
+                self.component = self.prev_component
+
         except AttributeError:
             #Define component to 0 if doesn't exist
+            self.prev_component = 0
             self.component = 0
+            #print("Reset to zero")
         self.choosep.component_p.componentcombobox.SetSelection(self.component)
 
     def update_normals(self,normal=0):
@@ -240,6 +251,8 @@ class VisualiserPanel(wx.Panel):
 
     def handle_component(self, event):
         self.component = event.GetInt()
+        self.prev_component = self.component
+        #print("Handle")
         self.redraw()
 
     def handle_normal(self, event):
