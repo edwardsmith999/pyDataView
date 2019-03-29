@@ -30,7 +30,10 @@ class VisualiserPanel(wx.Panel):
         # As fundametal classes typically return zeros on missing results 
         # while DataNotAvailable error is returned for some complex classes
         for item in self.PP.plotlist.items():
-            try:    
+            try:
+                #Skip example case as we end up with wrong binlimits
+                if ("example" in str(item)):
+                    continue
                 self.initialise_visuals(item)
                 #If successful, use the current object
                 # if not then keep trying
@@ -84,6 +87,18 @@ class VisualiserPanel(wx.Panel):
         self.toggle_binslider("Off")
         self.redraw()
 
+        #Attempt to create a custom event to set initial value
+        #import wx.lib.newevent
+        #SomeNewEvent, EVT_SOME_NEW_EVENT = wx.lib.newevent.NewEvent()
+        #evt = SomeNewEvent(GetString=lambda : unicode(self.fieldname))
+        #self.handle_fieldtype(evt)
+
+        #Set radio box to initial value
+        for i, k in enumerate(sorted(self.PP.plotlist.keys())):
+            if k == self.fieldname:    
+                self.choosep.fieldtype_p.fieldradiobox.SetSelection(i)
+                break
+
     def set_bindings(self):
 
         self.Bind(wx.EVT_RADIOBOX, self.handle_plottype, 
@@ -94,7 +109,6 @@ class VisualiserPanel(wx.Panel):
                   self.choosep.component_p.componentcombobox)
         self.Bind(wx.EVT_COMBOBOX, self.handle_normal, 
                   self.choosep.component_p.normalcombobox)
-
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.handle_recslider, 
                   self.slidersp.recslider.slider)
         self.Bind(wx.EVT_COMMAND_SCROLL_THUMBTRACK, self.handle_binslider, 
@@ -176,11 +190,11 @@ class VisualiserPanel(wx.Panel):
             self.set_limits = self.set_contour_limits
             self.toggle_binslider("On")
             self.toggle_button("Off")
-        #elif plottype == 'CPL':
-        #    self.redraw = self.redraw_cpl_plot
-        #    self.update = self.update_cpl_plot
-        #    self.toggle_binslider("Off")
-        #    self.toggle_button("Off")
+        elif plottype == 'CPL':
+            self.redraw = self.redraw_cpl_plot
+            self.update = self.update_cpl_plot
+            self.toggle_binslider("Off")
+            self.toggle_button("Off")
         #else: 
             #try:
             #    from mayavi import mlab

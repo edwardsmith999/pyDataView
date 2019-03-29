@@ -17,9 +17,13 @@ class LAMMPS_PostProc(PostProc):
             print("Directory " +  self.resultsdir + " not found")
             raise IOError
 
-        possibles = {'LAMMPS Velocity': LAMMPS_vField,
-                     'LAMMPS Number': LAMMPS_nField,
-                     'LAMMPS Number Density': LAMMPS_dField}
+        possibles = {'vsum': LAMMPS_pField,
+                     'nsum': LAMMPS_mField,
+                     'Density': LAMMPS_dField,
+                     'Velocity': LAMMPS_vField,
+                     'Momentum': LAMMPS_momField,
+                     'Temperature': LAMMPS_TField,
+                     'Pressure': LAMMPS_PressureField}
 
         self.plotlist = {}
         for key, field in possibles.items(): 

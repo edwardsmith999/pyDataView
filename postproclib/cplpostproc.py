@@ -39,7 +39,7 @@ momfieldtypes = {
                 'serialcouette': 
                     serial_cfdfields.Serial_CFD_momField,
                 'lammps': 
-                    None,
+                    lammpsfields.LAMMPS_momField, 
                 'openfoam': 
                     openfoamfields.OpenFOAM_momField,
                 'transflow': 

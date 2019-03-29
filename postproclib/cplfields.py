@@ -68,9 +68,14 @@ class CPLField(Field):
                                   for i in range(3)])
         self.md_cells = np.array([int(len(self.md_field.grid[i])) 
                                  for i in range(3)])
-        self.md_cfdcells = np.rint(
-                                   np.divide(self.md_xyzL,self.cfd_dxyz)
-                                  ).astype(int)
+        self.md_cfdcells = np.rint(np.divide(self.md_xyzL,
+                                             self.cfd_dxyz)).astype(int)
+
+        if any(self.md_cfdcells == 0):
+            Errorstr = ("CPLField Error - md_cfdcells is zero \n" + 
+                       "MD domain= " + str(self.md_xyzL) + " \n" +
+                       "CFD cell= " + str(self.cfd_dxyz))
+            raise Exception(Errorstr)
 
         self.cpl_cells = (self.md_cfdcells + self.cfd_cells 
                         - self.olap_cells  - self.cfd_halos)
@@ -81,6 +86,7 @@ class CPLField(Field):
         self.labels = self.md_field.labels
         self.axislabels = self.md_field.axislabels
         self.Raw = self.md_field.Raw
+        self.plotfreq = self.md_field.plotfreq
 
     def get_grids(self):
 

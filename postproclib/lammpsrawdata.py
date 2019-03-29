@@ -13,6 +13,7 @@ class LAMMPS_RawData(RawData):
         self.fobj = open(fdir + fname, 'rb')
         self.recoffsets = self.get_recoffsets()
         self.maxrec = len(self.recoffsets) - 1
+        self.plotfreq = self.get_plotfreq()
         self.grid = self.get_grid()
         self.nbins = [len(self.grid[i]) for i in range(len(self.grid))]
         self.readindices = self.get_readindices(readnames)
@@ -33,12 +34,19 @@ class LAMMPS_RawData(RawData):
                 break
 
         return offsets
-       
+
+    def get_plotfreq(self):
+
+        self.fobj.seek(self.recoffsets[0])
+        it, ngpoints, nsamples = self.fobj.readline().split()
+
+        return int(it)
+
     def get_grid(self):
 
         def uniqueify(seq):
             """ 
-                See http://www.peterbe.com/plog/uniqifiers-benchmark
+                "Remove repeated values, e.g. [1,2,2,3,4,3] => [1,2,3,4]
             """
             seen = set()
             seen_add = seen.add
@@ -108,16 +116,11 @@ class LAMMPS_RawData(RawData):
                     bindata[cnt] = float(lineitems[index])
                     cnt += 1
 
-        bindata = np.reshape( 
-                              bindata,
-                              [ 
-                                nrecs,
-                                self.nbins[0],
-                                self.nbins[1],
-                                self.nbins[2],
-                                self.nperbin
-                              ]
-                             )
+        bindata = np.reshape(bindata,[nrecs,
+                                      self.nbins[0],
+                                      self.nbins[1],
+                                      self.nbins[2],
+                                      self.nperbin])
         bindata = np.transpose(bindata, (1,2,3,0,4))
 
         # If bin limits are specified, return only those within range

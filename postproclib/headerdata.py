@@ -2,6 +2,7 @@
 import glob
 import os
 import re
+
 """
 	Automatically read and store variables in a header file formatted
 	as follows:

@@ -405,7 +405,7 @@ class Field():
         return gradv
 
     def write_dx_file(self, startrec, endrec, writedir=None, 
-                            component=0, norm=False, **kwargs):
+                            component=0, norm=False, origin=None, **kwargs):
 
         """
            Write MD field to dx file format which is primarily
@@ -440,9 +440,11 @@ class Field():
             originx = np.min(self.grid[0])
             originy = np.min(self.grid[1])
             originz = np.min(self.grid[2])
-#            originx = -Lx/2.0
-#            originy = -Ly/2.0
-#            originz = -Lz/2.0
+            if origin != None:
+                assert len(origin) == 3
+                originx = origin[0] #-Ly/2
+                originy = origin[1] #-Ly/2.0
+                originz = origin[2] #-Lz/2.0
             data = self.cellcentre2vertex(data[:,:,:,0,component])
 
             Nx_v, Ny_v, Nz_v = data.shape[0], data.shape[1], data.shape[2]

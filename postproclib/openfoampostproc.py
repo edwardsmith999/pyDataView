@@ -114,9 +114,10 @@ class OpenFOAM_PostProc(PostProc):
                                 S = OpenFOAM_SymmTensorField(self.resultsdir, fname, parallel_run)
                             elif "surfaceScalarField" in line:
                                 print(filename, "is a surfaceScalarField")
+                                break
                             else:
                                 continue
-                    self.plotlist.update({fname:S})
+                            self.plotlist.update({fname:S})
             except IOError:
                 print("Error reading ", filename)
                 pass

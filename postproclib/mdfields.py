@@ -1180,7 +1180,7 @@ class MD_dField(MD_complexField):
         gridvolumes = np.expand_dims(gridvolumes,axis=-1)
 
         # Read 4D time series from startrec to endrec
-        mdata = self.mField.read(startrec, endrec, binlimits=binlimits)
+        mdata = self.mField.read(startrec, endrec, binlimits=binlimits, **kwargs)
         mdata = np.divide(mdata, float(self.plotfreq))
 
         density = np.divide(mdata, gridvolumes)
@@ -1194,8 +1194,13 @@ class MD_dField(MD_complexField):
         gridvolumes = np.expand_dims(gridvolumes,axis=-1)
 
         # Read 4D time series from startrec to endrec
-        mdata = self.mField.read(startrec, endrec, binlimits=binlimits)
+        mdata = self.mField.read(startrec, endrec, binlimits=binlimits, **kwargs)
         mdata = np.divide(mdata,float(self.plotfreq))
+
+        #Check for missing or skipped records here
+        if (mdata.shape[3] != nrecs):
+            print("Missing record detected so normalising by number of records")
+            nrecs = mdata.shape[3]
 
         if (avgaxes != ()):
             mdata = np.sum(mdata, axis=avgaxes) 

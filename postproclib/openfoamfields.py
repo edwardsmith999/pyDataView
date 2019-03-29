@@ -104,8 +104,8 @@ class OpenFOAM_momField(OpenFOAMField):
 
     def read(self, startrec, endrec, binlimits=None, **kwargs):
         U = OpenFOAMField.read(self, startrec, endrec, **kwargs)
-        print("WARNING FROM OpenFOAM_momField, NEEDS RHO, ASSUMING 0.3")
-        return U*0.3
+        print("WARNING FROM OpenFOAM_momField, NEEDS RHO, ASSUMING 0.8")
+        return U*0.8
 
 
 

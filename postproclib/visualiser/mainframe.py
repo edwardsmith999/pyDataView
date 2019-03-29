@@ -22,6 +22,7 @@ class MainFrame(wx.Frame):
 
         wx.Frame.__init__(self,parent,title=title,size=size)
         try:
+            # postproclib.visualiser.__path__ (pplvpath) is a list
             if os.path.isfile(pplvpath[0]+"/logo.gif"): 
                 _icon = wx.EmptyIcon()
                 _icon.CopyFromBitmap(wx.Bitmap(pplvpath[0]
