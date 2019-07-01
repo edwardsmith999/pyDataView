@@ -51,9 +51,13 @@ class LAMMPS_TField(LAMMPSField):
 
 class LAMMPS_PressureField(LAMMPSField):
     #fname = 'cplchunk'
-    readnames = ['c_Pressure[1]']
+    readnames = ['c_Pressure[1]', 'c_Pressure[2]', 'c_Pressure[3]']
     labels = readnames
 
+class LAMMPS_ShearStressField(LAMMPSField):
+    #fname = 'cplchunk'
+    readnames = ['c_Pressure[4]', 'c_Pressure[5]', 'c_Pressure[6]']
+    labels = readnames
 
 # ----------------------------------------------------------------------------
 # Complex fields

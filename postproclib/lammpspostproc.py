@@ -23,7 +23,8 @@ class LAMMPS_PostProc(PostProc):
                      'Velocity': LAMMPS_vField,
                      'Momentum': LAMMPS_momField,
                      'Temperature': LAMMPS_TField,
-                     'Pressure': LAMMPS_PressureField}
+                     'Pressure': LAMMPS_PressureField,
+                     'Shear Stess': LAMMPS_ShearStressField}
 
         #Try to get fnames from log.lammps
         fname = ""
