@@ -25,12 +25,35 @@ class LAMMPS_PostProc(PostProc):
                      'Temperature': LAMMPS_TField,
                      'Pressure': LAMMPS_PressureField}
 
+        #Try to get fnames from log.lammps
+        fname = ""
+        logfile = "log.lammps"
+        if (os.path.isfile(logfile)):
+            with open(logfile, "r") as f:
+                n = "3dgrid"
+                for l in f:
+                    if ("chunk/atom bin/3d") in l:
+                       n=l.split()[1]
+                    if n in l and "ave/chunk" in l:
+                       indx = l.find("file")
+                       fname = l[indx:].split()[1]
+        else:
+            print("logfile ", logfile, " not found")
+            #raise IOError
+
+        if fname == "":
+            print("fname not defined, trying 3dgrid")
+            fname = "3dgrid"
+
+
         self.plotlist = {}
         for key, field in possibles.items(): 
             #print(key, field, self.resultsdir)
             try:
-                self.plotlist[key] = field(self.resultsdir)
+                self.plotlist[key] = field(self.resultsdir, fname)
             except IOError:
+                pass
+            except ValueError:
                 pass 
 
         if (len(self.plotlist) == 0):

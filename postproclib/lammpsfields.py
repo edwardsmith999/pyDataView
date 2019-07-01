@@ -5,7 +5,8 @@ from lammpsrawdata import LAMMPS_RawData
 
 class LAMMPSField(Field):
 
-    def __init__(self, fdir):
+    def __init__(self, fdir, fname):
+        self.fname = fname
         Raw = LAMMPS_RawData(fdir, self.fname, self.readnames)
         self.nperbin = Raw.nperbin  
         Field.__init__(self, Raw)
@@ -32,24 +33,24 @@ class LAMMPS_complexField(LAMMPSField):
 # Simple fields
 
 class LAMMPS_pField(LAMMPSField):
-    fname = 'cplchunk'
+    #fname = 'cplchunk'
     readnames = ['vx', 'vy', 'vz']
     labels = readnames
 
 
 class LAMMPS_mField(LAMMPSField):
-    fname = 'cplchunk'
+    #fname = 'cplchunk'
     readnames = ['Ncount']
     labels = readnames
 
 
 class LAMMPS_TField(LAMMPSField):
-    fname = 'cplchunk'
+    #fname = 'cplchunk'
     readnames = ['temp']
     labels = readnames
 
 class LAMMPS_PressureField(LAMMPSField):
-    fname = 'cplchunk'
+    #fname = 'cplchunk'
     readnames = ['c_Pressure[1]']
     labels = readnames
 
@@ -58,8 +59,8 @@ class LAMMPS_PressureField(LAMMPSField):
 # Complex fields
 class LAMMPS_dField(LAMMPS_complexField):
 
-    def __init__(self, fdir):
-        self.nField = LAMMPS_mField(fdir)
+    def __init__(self, fdir, fname):
+        self.nField = LAMMPS_mField(fdir, fname)
         Field.__init__(self, self.nField.Raw)
         self.inherit_parameters(self.nField)
 
@@ -96,9 +97,9 @@ class LAMMPS_dField(LAMMPS_complexField):
 #Velocity field
 class LAMMPS_vField(LAMMPS_complexField):
 
-    def __init__(self, fdir):
-        self.mField = LAMMPS_mField(fdir)
-        self.pField = LAMMPS_pField(fdir)
+    def __init__(self, fdir, fname):
+        self.mField = LAMMPS_mField(fdir, fname)
+        self.pField = LAMMPS_pField(fdir, fname)
         Field.__init__(self, self.pField.Raw)
         self.inherit_parameters(self.pField)
 
@@ -133,8 +134,8 @@ class LAMMPS_vField(LAMMPS_complexField):
 # Momentum density field
 class LAMMPS_momField(LAMMPS_complexField):
     
-    def __init__(self, fdir):
-        self.pField = LAMMPS_pField(fdir)
+    def __init__(self, fdir, fname):
+        self.pField = LAMMPS_pField(fdir, fname)
         Field.__init__(self,self.pField.Raw)
         self.inherit_parameters(self.pField)
 

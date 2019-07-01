@@ -160,7 +160,7 @@ endrec={5}
 
 #Get Post Proc Object
 fdir = '{1}'
-PPObj = ppl.MD_PostProc(fdir)
+PPObj = ppl.All_PostProc(fdir)
 print(PPObj)
 
 #Get plotting object
