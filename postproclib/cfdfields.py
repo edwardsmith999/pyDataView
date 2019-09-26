@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 import numpy as np
 
-from field import Field
-from cfdrawdata import CFD_RawData
+from .field import Field
+from .cfdrawdata import CFD_RawData
 
 # ============================================================================
 # CFDField base class
@@ -98,8 +98,8 @@ class CFD_mugradvField(CFD_complexField):
     def read(self, startrec, endrec, binlimits=None, **kwargs):
 
         if (self.rho == None):
-            print('CFD_mugradvField requires rho, set by ' +
-                  'CFD_mugradvField.set_rho(rho).')
+            print(('CFD_mugradvField requires rho, set by ' +
+                  'CFD_mugradvField.set_rho(rho).'))
  
         vdata = self.vField.read(startrec, endrec, binlimits=binlimits, 
                                  **kwargs)

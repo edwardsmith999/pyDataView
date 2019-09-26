@@ -1,7 +1,7 @@
 import numpy as np
 
-from field import Field
-from lammpsrawdata import LAMMPS_RawData
+from .field import Field
+from .lammpsrawdata import LAMMPS_RawData
 
 class LAMMPSField(Field):
 

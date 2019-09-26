@@ -1,11 +1,11 @@
 import os
-from cplfields import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir, DataNotAvailable
-from mdpostproc import MD_PostProc
-from cfdpostproc import CFD_PostProc
-from serial_cfdpostproc import Serial_CFD_PostProc
-from openfoampostproc import OpenFOAM_PostProc
+from .cplfields import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir, DataNotAvailable
+from .mdpostproc import MD_PostProc
+from .cfdpostproc import CFD_PostProc
+from .serial_cfdpostproc import Serial_CFD_PostProc
+from .openfoampostproc import OpenFOAM_PostProc
 
 # Results directory paths for each code
 resultsdirs = {
@@ -94,7 +94,7 @@ class CPL_PostProc(PostProc):
         # Check directory exists before instantiating object and check 
         # which files associated with plots are in directory
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
         self.plotlist = {}
@@ -108,10 +108,10 @@ class CPL_PostProc(PostProc):
             MDkey = pair['MD']
             CFDkey = pair['CFD'] 
 
-            for CPLkey, CPLfieldtype in possible_fields.items():
+            for CPLkey, CPLfieldtype in list(possible_fields.items()):
 
-                print('Attempting to construct ' + str(CPLfieldtype) 
-                      + ' for ' + MDkey + ' and ' + CFDkey)
+                print(('Attempting to construct ' + str(CPLfieldtype) 
+                      + ' for ' + MDkey + ' and ' + CFDkey))
 
                 try:
                     self.plotlist[CPLkey] = CPLfieldtype(self.resultsdir,

@@ -4,9 +4,9 @@ import glob
 import os
 import sys
 
-from rawdata import RawData
-from headerdata import MDHeaderData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .headerdata import MDHeaderData
+from .pplexceptions import DataNotAvailable
 
 """
 
@@ -64,7 +64,7 @@ class MD_RawData(RawData):
         elif (glob.glob(fdir+fname+'.*')):
             self.separate_outfiles = True 
         else:
-            print('Neither ' + fname + ' nor ' + fname + '.* exist.')
+            print(('Neither ' + fname + ' nor ' + fname + '.* exist.'))
             raise DataNotAvailable
 
         self.header = self.read_header(fdir)
@@ -208,11 +208,11 @@ class MD_RawData(RawData):
             try:
                 maxrec = int(sortedlist[-1].split('.')[-1])
             except ValueError:
-                print("Error in last record, maybe '*', in filename? = ", sortedlist[-1])
+                print(("Error in last record, maybe '*', in filename? = ", sortedlist[-1]))
                 maxrec = 0
             
         else:
-            print('Neither ' + self.fname + ' nor ' + self.fname + '.* exist.')
+            print(('Neither ' + self.fname + ' nor ' + self.fname + '.* exist.'))
             sys.exit
 
 
@@ -259,20 +259,20 @@ class MD_RawData(RawData):
                     fobj = open(filepath,'rb')
                 except:
                     if missingrec is 'raise':
-                        print('Unable to find file ' + filepath)    
+                        print(('Unable to find file ' + filepath))    
                         raise DataNotAvailable
                     elif missingrec is 'returnzeros':
-                        print('Unable to find file ' + filepath, '. Returning zeros')
+                        print(('Unable to find file ' + filepath, '. Returning zeros'))
                         return_zeros = True
                     elif missingrec is 'skip':
-                        print('Unable to find file ' + filepath, '. Reducing returned records by one')
+                        print(('Unable to find file ' + filepath, '. Reducing returned records by one'))
                         skip_rec = True
 
                 istart = plusrec*recitems
                 iend = istart + recitems
                 if (verbose):
-                    print('Reading {0:s} rec {1:5d}'.format(
-                          self.fname,startrec+plusrec))
+                    print(('Reading {0:s} rec {1:5d}'.format(
+                          self.fname,startrec+plusrec)))
                 if return_zeros:
                     bindata = np.zeros([ self.nbins[0],self.nbins[1],
                                          self.nbins[2],self.nperbin ,nrecs ])
@@ -296,13 +296,13 @@ class MD_RawData(RawData):
                 fobj = open(self.fdir+self.fname,'rb')
             except:
                 if missingrec is 'raise':
-                    print('Unable to find file ' + filepath)    
+                    print(('Unable to find file ' + filepath))    
                     raise DataNotAvailable 
                 elif missingrec is 'returnzeros':
-                    print('Unable to find file ' + filepath, '. Returning zeros')
+                    print(('Unable to find file ' + filepath, '. Returning zeros'))
                     return_zeros = True
                 elif missingrec is 'skip':
-                    print('Unable to find file ' + filepath, '. Returning nothing')
+                    print(('Unable to find file ' + filepath, '. Returning nothing'))
                     skip_rec = True
 
             # Seek to correct point in the file
@@ -317,8 +317,8 @@ class MD_RawData(RawData):
             fobj.seek(seekbyte)
 
             if (verbose):
-                print('Reading {0:s} recs {1:5d} to {2:5d}'.format(
-                      self.fname,startrec,endrec))
+                print(('Reading {0:s} recs {1:5d} to {2:5d}'.format(
+                      self.fname,startrec,endrec)))
 
             # Get data and reshape with fortran array ordering
             if return_zeros:
@@ -333,7 +333,7 @@ class MD_RawData(RawData):
             fobj.close()
 
         if (verbose):
-            print('Reshaping and transposing {0:s} '.format(self.fname))
+            print(('Reshaping and transposing {0:s} '.format(self.fname)))
 
         # Reshape bindata
         bindata = np.reshape( bindata,
@@ -353,9 +353,9 @@ class MD_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('bindata.shape = {0:s}'.format(str(bindata.shape)))
-                print('Extracting bins {0:s} from {1:s} '.format(
-                      str(binlimits),self.fname))
+                print(('bindata.shape = {0:s}'.format(str(bindata.shape))))
+                print(('Extracting bins {0:s} from {1:s} '.format(
+                      str(binlimits),self.fname)))
             # Defaults
             lower = [0]*3
             upper = [i for i in bindata.shape] 
@@ -373,7 +373,7 @@ class MD_RawData(RawData):
 
 
             if (verbose):
-                print('new bindata.shape = {0:s}'.format(str(bindata.shape)))
+                print(('new bindata.shape = {0:s}'.format(str(bindata.shape))))
 
         return bindata
         

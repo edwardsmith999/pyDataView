@@ -3,7 +3,7 @@
 import os
 import numpy as np
 from matplotlib.colors import colorConverter
-import latex2utf
+from . import latex2utf
 from math import log10, floor
 import math as maths
 import re
@@ -196,7 +196,7 @@ def round_to_n(x,p):
 
 def latextounicode(strings):
 
-    if type(strings) is unicode:
+    if type(strings) is str:
         string = strings.encode('utf8')
         try:
             strings = strings.replace('rho','\xcf\x81')
@@ -220,7 +220,7 @@ def latextounicode(strings):
 
 def unicodetolatex(strings):
 
-    if type(strings) is unicode:
+    if type(strings) is str:
         string = strings.encode('utf8')
         strings = string.replace('\xcf\x81','rho')
     if type(strings) is str:

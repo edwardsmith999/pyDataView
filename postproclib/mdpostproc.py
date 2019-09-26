@@ -6,10 +6,10 @@ import math as maths
 import glob
 #import collections
 
-from mdfields import *
-from headerdata import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir, DataMismatch
+from .mdfields import *
+from .headerdata import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir, DataMismatch
 
     
 class MD_PostProc(PostProc):
@@ -33,10 +33,10 @@ class MD_PostProc(PostProc):
                                 "viscometrics", "rdf", "rdf3d", "ssf", "Fext",
                                 "Tbins", "vPDF", "msolv", "mpoly", "vsolv",
                                 "vpoly", "ebins","hfVA","hfVA_k","hfVA_c",
-                                "msurf", "combin")        
+                                "msurf", "dsurf_mflux", "combin")        
 
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
             
         self.fields_present = []
@@ -241,6 +241,10 @@ class MD_PostProc(PostProc):
             except DataMismatch:
                 pass
 
+        #Time evolving CV fluxes
+        if 'dsurf_mflux' in (self.fieldfiles1):
+            flux1 = MD_mfluxField(self.resultsdir,'dsurf_mflux', **kwargs)
+            self.plotlist.update({'dsurf_mflux':flux1})
 
         if ('ebins' in self.fieldfiles1 and
             'vbins' in self.fieldfiles1):

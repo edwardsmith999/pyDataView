@@ -5,8 +5,8 @@ import sys
 from postproclib.visualiser import __path__ as pplvpath
 from postproclib.pplexceptions import NoResultsInDir
 
-from visuals import VisualiserPanel
-from directory import DirectoryChooserPanel
+from .visuals import VisualiserPanel
+from .directory import DirectoryChooserPanel
 
 def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
     """"""
@@ -72,7 +72,7 @@ class MainFrame(wx.Frame):
             self.vbox.Add(self.visualiserpanel, 1, wx.EXPAND, 0)
             self.SetSizer(self.vbox)
             self.Layout()
-            print('New visualiser file directory: ' + fdir)
+            print(('New visualiser file directory: ' + fdir))
     
     def handle_chdir(self, event):
 

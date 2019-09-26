@@ -2,7 +2,7 @@
 import numpy as np
 import sys
 
-from pplexceptions import OutsideRecRange
+from .pplexceptions import OutsideRecRange
 
 
 class Field():
@@ -10,7 +10,7 @@ class Field():
     """
         Abstract base class to be inherited by MDField, CFDField and CPLField.
 
-        Authors: David Trevelyan & Ed Smith 2014
+        Authors: Ed Smith 2019 & David Trevelyan (2010-2014)
 
         Abstract base class template that generally specifies how data
         should be processed and returned in postprocessing routines.
@@ -55,8 +55,8 @@ class Field():
         """
 
         if (endrec > self.maxrec):
-            print('Record ' + str(endrec) + ' is greater than the maximum '
-                  'available (' + str(self.maxrec) + ').')
+            print(('Record ' + str(endrec) + ' is greater than the maximum '
+                  'available (' + str(self.maxrec) + ').'))
             raise OutsideRecRange
 
         grid_data = self.Raw.read(startrec,endrec,**kwargs)
@@ -344,7 +344,7 @@ class Field():
             Esumfft = np.sum(energy)
             ratio = abs(Esumreal - Esumfft)/Esumreal 
             perc = (1. - ratio)*100.
-            print('Parseval thm (discounting window): ' + "%9.6f"%perc + '%')
+            print(('Parseval thm (discounting window): ' + "%9.6f"%perc + '%'))
 
         if (windowaxis):
             energy = energy / wss
@@ -552,7 +552,7 @@ class Field():
             for nz in range(mindir[2],maxdir[2]):
                 for rec in range(data.shape[3]):
                     for ixyz in range(data.shape[4]):
-                        print(nx,nz,rec,ixyz)
+                        print((nx,nz,rec,ixyz))
                         lindata[nx,:,nz,rec,ixyz] = self.map_data_cosinetolinear(
                                             data[nx,:,nz,rec,ixyz],
                                             self.Raw.Ny,

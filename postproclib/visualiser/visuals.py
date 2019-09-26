@@ -1,8 +1,8 @@
 # -*- encoding: utf-8 -*-
 import wx
-from plot import PyplotPanel
-from choosefield import FieldChooserPanel
-from sliders import RecordSliderPanel
+from .plot import PyplotPanel
+from .choosefield import FieldChooserPanel
+from .sliders import RecordSliderPanel
 
 from postproclib.pplexceptions import DataNotAvailable
 from postproclib.allpostproc import All_PostProc  
@@ -29,7 +29,7 @@ class VisualiserPanel(wx.Panel):
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
         # while DataNotAvailable error is returned for some complex classes
-        for item in self.PP.plotlist.items():
+        for item in list(self.PP.plotlist.items()):
             try:
                 #Skip example case as we end up with wrong binlimits
                 if ("example" in str(item)):
@@ -38,11 +38,11 @@ class VisualiserPanel(wx.Panel):
                 #If successful, use the current object
                 # if not then keep trying
                 break
-            except DataNotAvailable, ValueError:
+            except DataNotAvailable as ValueError:
                 pass
 
     def initialise_visuals(self,item):
-        print('Trying to initialise visuals with ', item)
+        print(('Trying to initialise visuals with ', item))
         self.fieldname, self.field = item
         self.pyplotp = PyplotPanel(self)
         self.choosep = FieldChooserPanel(self)
@@ -156,13 +156,13 @@ class VisualiserPanel(wx.Panel):
 
         if defaultFile == 'fig.png':
             try:
-                print('Saving figure as ' + fpath)
+                print(('Saving figure as ' + fpath))
                 self.pyplotp.savefigure(fpath)
                 print('Saved.')
             except ValueError:
                 raise
         elif defaultFile == 'data.csv':
-            print('Writing data as ' + fpath)
+            print(('Writing data as ' + fpath))
             self.pyplotp.writedatacsv(fpath)
             print('Finished.')
         elif defaultFile == 'script.py':

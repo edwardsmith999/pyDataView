@@ -1,7 +1,7 @@
 #! /usr/bin/env python
 import numpy as np
-from field import Field
-from channelflowrawdata import Channelflow_RawData
+from .field import Field
+from .channelflowrawdata import Channelflow_RawData
 
 # ============================================================================
 # CFDField base class

@@ -24,5 +24,5 @@ class MacroProps:
 if __name__ == "__main__":
     obj = MacroProps('./')
     prop = 'Pressure'
-    print('For ' + prop + ' mean = ' + str(obj.get_mean(prop)) + ' with standard deviation = ' 
-		  + str(obj.get_std(prop)) + ' and standard error = ' + str(obj.get_stderror(prop)) )
+    print(('For ' + prop + ' mean = ' + str(obj.get_mean(prop)) + ' with standard deviation = ' 
+		  + str(obj.get_std(prop)) + ' and standard error = ' + str(obj.get_stderror(prop)) ))

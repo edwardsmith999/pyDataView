@@ -1,7 +1,7 @@
 import os
-from lammpsfields import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir 
+from .lammpsfields import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir 
 
 class LAMMPS_PostProc(PostProc):
 
@@ -14,7 +14,7 @@ class LAMMPS_PostProc(PostProc):
 
         # Check directory exists before trying to instantiate object
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
         possibles = {'vsum': LAMMPS_pField,
@@ -37,9 +37,13 @@ class LAMMPS_PostProc(PostProc):
                        n=l.split()[1]
                     if n in l and "ave/chunk" in l:
                        indx = l.find("file")
-                       fname = l[indx:].split()[1]
+                       if indx != -1:
+                           fname = l[indx:].split()[1]
+                       else:
+                           print(("logfile ", logfile, " appears to be corrupted " + 
+                                 "so cannot determine output filename"))
         else:
-            print("logfile ", logfile, " not found")
+            print(("logfile ", logfile, " not found"))
             #raise IOError
 
         if fname == "":
@@ -48,7 +52,7 @@ class LAMMPS_PostProc(PostProc):
 
 
         self.plotlist = {}
-        for key, field in possibles.items(): 
+        for key, field in list(possibles.items()): 
             #print(key, field, self.resultsdir)
             try:
                 self.plotlist[key] = field(self.resultsdir, fname)
