@@ -59,6 +59,15 @@ class LAMMPS_ShearStressField(LAMMPSField):
     readnames = ['c_Pressure[4]', 'c_Pressure[5]', 'c_Pressure[6]']
     labels = readnames
 
+class LAMMPS_KineticEnergyField(LAMMPSField):   
+    readnames = ['c_myKE'] 
+    labels = readnames
+    
+class LAMMPS_PotentialEnergyField(LAMMPSField):   
+    readnames = ['c_eng'] 
+    labels = readnames
+
+    
 # ----------------------------------------------------------------------------
 # Complex fields
 class LAMMPS_dField(LAMMPS_complexField):
@@ -175,4 +184,21 @@ class LAMMPS_momField(LAMMPS_complexField):
 
         return momdensity 
 
+    
+    
+# Total Energy field
+class LAMMPS_TotalEnergyField(LAMMPS_complexField):
+    
+    def __init__(self, fdir, fname):
+        self.KEField = LAMMPS_KineticEnergyField(fdir, fname)
+        self.PEField = LAMMPS_PotentialEnergyField(fdir, fname)
+        Field.__init__(self, self.KEField.Raw)
+        self.inherit_parameters(self.KEField)
 
+    def read(self, startrec, endrec, binlimits=None, **kwargs):
+
+        KEdata = self.KEField.read(startrec, endrec, binlimits=binlimits, **kwargs)
+        PEdata = self.PEField.read(startrec, endrec, binlimits=binlimits, **kwargs)
+        Tdata = KEdata + PEdata
+
+        return Tdata 
