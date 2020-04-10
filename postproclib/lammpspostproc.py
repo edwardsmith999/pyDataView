@@ -24,7 +24,12 @@ class LAMMPS_PostProc(PostProc):
                      'Momentum': LAMMPS_momField,
                      'Temperature': LAMMPS_TField,
                      'Pressure': LAMMPS_PressureField,
-                     'Shear Stess': LAMMPS_ShearStressField}
+                     'Shear Stess': LAMMPS_ShearStressField,
+        	         'Kinetic Energy': LAMMPS_KineticEnergyField,    
+                     'Potential Energy': LAMMPS_PotentialEnergyField,
+                     'Total Energy': LAMMPS_TotalEnergyField
+                    }
+
 
         #Try to get fnames from log.lammps
         fname = ""
