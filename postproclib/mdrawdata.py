@@ -246,7 +246,7 @@ class MD_RawData(RawData):
         # Allocate enough memory in the C library to efficiently insert
         # into bindata
         recitems = np.product(self.nbins)*self.nperbin
-        bindata  = np.empty(nrecs*recitems)
+        bindata  = np.empty(int(nrecs*recitems))
 
         # Check whether the records are written separately
         # If so

@@ -33,7 +33,7 @@ class MD_PostProc(PostProc):
                                 "viscometrics", "rdf", "rdf3d", "ssf", "Fext",
                                 "Tbins", "vPDF", "msolv", "mpoly", "vsolv",
                                 "vpoly", "ebins","hfVA","hfVA_k","hfVA_c",
-                                "msurf", "dsurf_mflux", "combin")        
+                                "msurf", "dsurf_mflux", "dsurf_vflux", "combin")        
 
         if (not os.path.isdir(self.resultsdir)):
             print(("Directory " +  self.resultsdir + " not found"))
@@ -245,6 +245,10 @@ class MD_PostProc(PostProc):
         if 'dsurf_mflux' in (self.fieldfiles1):
             flux1 = MD_mfluxField(self.resultsdir,'dsurf_mflux', **kwargs)
             self.plotlist.update({'dsurf_mflux':flux1})
+
+        if 'dsurf_vflux' in (self.fieldfiles1):
+            flux1 = MD_pfluxField(self.resultsdir,'dsurf_vflux', **kwargs)
+            self.plotlist.update({'dsurf_vflux':flux1})
 
         if ('ebins' in self.fieldfiles1 and
             'vbins' in self.fieldfiles1):

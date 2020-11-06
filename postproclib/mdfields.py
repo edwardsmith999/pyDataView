@@ -330,7 +330,7 @@ class MD_pfluxField(MDField):
         MD_vfluxField manages velocity flux field data in the form of
         velocity/stress sum over 6 cubic bin surfaces with 18 double 
         precision real data types per bin
-        e.g. fnames = totalflux, vflux, psurface (no default)
+        e.g. fnames = totalflux, vflux, psurface, dsurf_vflux (no default)
     """
 
     dtype = 'd'
@@ -338,7 +338,7 @@ class MD_pfluxField(MDField):
 
     def __init__(self,fdir,fname):
 
-        if (fname in ("psurface","vflux")):
+        if (fname in ("psurface","vflux", "dsurf_vflux")):
             self.fname = fname
             self.labels = ["xxbottom","yxbottom","zxbottom",
                            "xybottom","yybottom","zybottom",
