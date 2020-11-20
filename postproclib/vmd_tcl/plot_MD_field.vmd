@@ -1,0 +1,227 @@
+# =============================================================#
+# VMD script to plot a coupled simulation using a combination  #
+# of MD molecules and volumetric data calculated from CFD/MD   #
+# averages and written in .dx format                           #
+# =============================================================#
+
+# load colorbar routine
+source ./color_scale_bar_new_test.tcl
+namespace import ::ColorBar_v2::*
+
+# load read file routine
+source ./read_file.tcl
+namespace import ::read_file::*
+
+# load custom colour scale
+source ./custom_colorscale.tcl
+namespace import ::custom_colorscale::*
+
+#Header VMD Header data written by python script to define time intervals
+proc read_header {} {
+
+	set filename "./vol_data/vmd_header"
+
+	set tplot [read_file_in $filename  1 ]
+	set delta_t [read_file_in $filename  2 ]
+	set Nave [read_file_in $filename  3 ]
+	set skip [read_file_in $filename  4 ]
+
+	return [list $tplot $delta_t $Nave $skip]
+}
+
+#Get VMD record that corresponds to current frame
+proc frame2vmdrecord {frame tplot} {
+
+ 	#Check if MD step is inside interval
+ 	set interval_no 1
+
+ 	#Get start and end of current interval
+	set interval_start [read_file_in "./vol_data/vmd_intervals"       $interval_no     ]
+	set interval_end   [read_file_in "./vol_data/vmd_intervals" [expr $interval_no+1 ] ]
+	set interval_frame [expr ($interval_end - $interval_start)/$tplot]
+	set prev_int_frame 0
+	while {$frame >= $interval_frame} {
+		#Get start and end of current interval
+		#puts "In while loop = $interval_no $interval_start $interval_end $frame $interval_frame"
+		set interval_no    [expr $interval_no +2] 
+		set interval_start [read_file_in "./vol_data/vmd_intervals"       $interval_no     ]
+		set interval_end   [read_file_in "./vol_data/vmd_intervals" [expr $interval_no+1 ] ]
+		set prev_int_frame [expr $interval_frame]
+		set interval_frame [expr ($interval_end - $interval_start)/$tplot + $interval_frame]
+	}
+
+	set vmdrecord [expr ($interval_start/($tplot)+($frame-$prev_int_frame))]
+	return $vmdrecord
+}
+
+#Get bin record corresponding to vmd record
+proc vmdrecord2binrec {vmdrec Nave} {
+	
+	set binrec [expr $vmdrec/$Nave]
+
+	return $binrec
+}
+
+#Get simulation time corresponding to bin record
+proc get_simulation_time {frame tplot dt} {
+
+    set rec [frame2vmdrecord $frame $tplot ]
+	set time_text [format "%s %.4f" "Simulation Time = " [expr $rec*$dt]]
+	return $time_text
+}
+
+#Set number of frames (average steps) for each volume
+set headervars [read_header]; puts ""
+set tplot [lindex $headervars 0]; puts ""
+set delta_t [lindex $headervars 1]; puts ""
+set Nave [lindex $headervars 2]; puts ""
+set skip [lindex $headervars 3]; puts ""
+
+# Display settings
+display projection   Orthographic
+display nearclip set 0.000000
+display farclip  set 10.000000
+display depthcue   off
+#Specifiy Colorbar
+set colorfilename "./vol_data/cmap.dat"; puts ""
+cmapfile_color_scale $colorfilename
+#tricolor_scale 
+#color scale method BWR
+color Display Background white
+
+# Load molecular data
+set updmol [mol new {../vmd_out.dcd} type dcd waitfor all]; puts ""
+set nframes [molinfo top get numframes]; puts ""
+
+
+set dx_records 0
+set Nvols 0
+for {set i 0} {$i<$nframes+1} {incr i} {
+    if {[expr [frame2vmdrecord $i $tplot] % [expr $Nave/$skip]] == 0} {
+        #set dx_records [expr $dx_records + 1]
+		set binrec [vmdrecord2binrec [frame2vmdrecord $i $tplot] [expr $Nave/$skip]]; puts ""
+		puts "For Frame = $i loading Bin = $binrec Time = [get_simulation_time $i $tplot $delta_t]"
+		mol addfile ./vol_data/DATA${binrec}.dx type dx waitfor all; puts ""
+        set Nvols [expr $Nvols+1]
+    }
+
+
+}
+
+#Molecules representation (Note - must be rep 0)
+mol delrep 0 top; puts ""
+mol representation points 2.000000
+mol color Volume 1
+mol selection all
+mol material Diffuse
+mol modmaterial 0 top AOChalky
+mol addrep top
+
+#Display outputs
+display ambientocclusion on
+display shadows on
+light 0 off
+
+#MD Volumetric Slice
+mol color Volume 5
+#Slice of xy plane through central in z
+#mol representation VolumeSlice 0.500000 5.000000 2.000000 2.000000
+#Slice of xz plane at bottom of domain in y
+mol representation VolumeSlice 0.000000 3.000000 1.000000 2.000000
+mol selection all
+mol material Transparent
+mol addrep top
+
+# store name of the Volumetric Slice representation (id=1) for later use
+set updrep [mol repname top 1]
+
+#Get minimum and maximum point in domain
+set sel [atomselect top all]; puts ""
+set coords [lsort -real [$sel get x]]; puts ""
+set dminx [lindex $coords 0]; puts ""
+set dmaxx [lindex [lsort -real -decreasing $coords] 0]; puts ""
+set coords [lsort -real [$sel get y]]; puts ""
+set dminy [lindex $coords 0]' puts ""
+set dmaxy [lindex [lsort -real -decreasing $coords] 0]; puts ""
+set coords [lsort -real [$sel get z]]; puts ""
+set dminz [lindex $coords 0]; puts ""
+set dmaxz [lindex [lsort -real -decreasing $coords] 0]; puts ""
+
+
+# colorbar
+set cmin [read_file_in "./vol_data/colour_range"  1  ]
+set cmax [read_file_in "./vol_data/colour_range"  2  ]
+mol scaleminmax 0 1 $cmin $cmax
+color_scale_bar_v2 0.5 0.05 0 1 $cmin $cmax 5 
+
+# use the volumetric data set for the isosurface corresponding to the frame divided by the variable Nave.
+# $updmol contains the id of the molecule and $updrep the (unique) name of
+# the isosurface representation
+proc update_iso {args} {
+    global updmol
+	global updrep
+	global Nave
+    global Nvols
+	global skip
+	global tplot
+	global delta_t
+	global dminy
+	global dminx
+	global cmin
+	global cmax
+
+    # get representation id and return if invalid
+    set repid [mol repindex $updmol $updrep]
+    if {$repid < 0} { return }
+
+    # update representation but replace the data set
+    # id with the current frame number.
+    set frame [molinfo $updmol get frame]
+    lassign [molinfo $updmol get "{rep $repid}"] rep
+	set vmdrec [frame2vmdrecord $frame $tplot]
+	set binrec [vmdrecord2binrec $vmdrec [expr $Nave/$skip]]
+    set volrec [expr $frame/[expr $Nave/$skip]]
+
+    #Load new representation provided dx file data is available
+    if {$volrec < $Nvols} {
+        mol representation [lreplace $rep 2 2 $volrec]
+        mol modrep $repid $updmol
+
+	    #Change volumetric data
+	    mol color Volume $volrec
+
+	    # Change molecular colour to MD volumetric data
+        #puts "Bin record = $binrec , vmdrec = $vmdrec, volrec = $volrec Frame = $frame "
+	    mol modcolor 0 $updmol Volume $volrec
+        mol scaleminmax 0 $updmol $cmin $cmax
+    } else {
+        puts "$volrec outside of range"
+    }
+
+
+	# Draw Text of current iteration
+	draw delete all
+	draw color black
+	set time_text [get_simulation_time $frame $tplot $delta_t] 
+	draw text "$dminx [expr $dminy-5.0] 0.0" $time_text
+
+	#puts "$interval_no $interval_start $MD_step $interval_end"
+
+	color_scale_bar_v2
+
+	# Debug prints
+	#puts "repid=$repid,updmol=$updmol,frame=$frame,vol=[expr $frame/$Nave],rep=$rep"
+
+	# Rotate
+	#rotate y by 0.133333
+	
+	#Write frame to file
+	#render TachyonInternal vmdscene{$frame}.tga
+
+}
+
+
+#Trace check for a change of VMD frame and calls update_iso function if changed
+trace variable vmd_frame($updmol) w update_iso
+animate goto 0
+

@@ -1,0 +1,92 @@
+
+proc newrep {molid repname} {
+	
+    mol addrep $molid 
+    set repid [expr [molinfo $molid get numreps] - 1] 
+    set repname [mol repname $molid $repid] 
+
+	return $repid
+}
+
+proc delrep {molid repname} {
+
+  set repid [mol repindex $molid $repname] 
+  mol delrep $repid $molid 
+
+}
+
+#Default molecule colours
+set W_colour 15
+set EO_colour 0
+set S_colour 1
+set M_colour 3
+set D_colour 9
+set C_colour 5
+set P_colour 0
+set A_colour 15
+
+#Molecule sizes based on base scale and set using size ratios
+set scale 0.6
+set W_size [expr 0.8584*$scale]
+set M_size [expr 1.2398*$scale]
+set D_size [expr 1.0702*$scale]
+set EO_size [expr 0.8067*$scale]
+set CM_size [expr 0.7*$scale]
+set S_size [expr 1.1*$scale]
+set P_size [expr 1.1*$scale]
+set A_size [expr 1.*$scale]
+
+#LOAD POLYMER MOLECULES
+mol new {./polymer_topol.psf} type {psf} first 0 last -1 step 1 waitfor all
+mol addfile {./vmd_out.dcd} type {dcd} first 0 last -1 step 1 waitfor all top
+set bonds [newrep top bonds]
+mol modstyle $bonds top CPK 0.000000 0.400000 10.000000 10.000000
+
+mol selection type W
+set repW [newrep top repW]
+mol modstyle $repW top CPK $W_size 0.000000 10.000000 10.000000
+mol modmaterial $repW top Transparent
+
+mol selection type D
+set repD [newrep top repD]
+mol modstyle $repD top CPK $D_size 0.000000 10.000000 10.000000
+mol modmaterial $repD top AOChalky
+
+mol selection type M
+set repM [newrep top repM]
+mol modstyle $repM top CPK $M_size 0.000000 10.000000 10.000000
+mol modmaterial $repM top AOChalky
+
+mol selection type EO
+set repEO [newrep top repEO]
+mol modstyle $repEO top CPK $EO_size 0.000000 10.000000 10.000000
+mol modmaterial $repEO top AOChalky
+
+mol selection type CM
+set repCM [newrep top repCM]
+mol modstyle $repCM top CPK $CM_size 0.000000 10.000000 10.000000
+
+mol selection type S
+set repS [newrep top repS]
+mol modstyle $repS top CPK $S_size 0.000000 10.000000 10.000000
+mol modmaterial $repS top AOChalky
+
+mol selection type C
+set repPOLY [newrep top repPOLY]
+mol modstyle $repPOLY top CPK $P_size 0.000000 10.000000 10.000000
+mol modmaterial $repPOLY top AOChalky
+
+mol selection type N
+set repSOL [newrep top repSOL]
+mol modstyle $repSOL top CPK $A_size 0.000000 10.000000 10.000000
+mol modmaterial $repSOL top AOChalky
+
+#Set default color for types
+color Name W $W_colour
+color Name E $EO_colour
+color Name S $S_colour
+color Name M $M_colour
+color Name D $D_colour
+color Name P $P_colour
+color Name A $A_colour
+
