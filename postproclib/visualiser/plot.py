@@ -13,7 +13,10 @@ class PyplotPanel(wx.Panel):
         wx.Panel.__init__(self,parent,**kwargs)
         self.parent = parent
         self.figure = matplotlib.figure.Figure()
-        self.canvas = wxaggb.FigureCanvas(self, -1, self.figure)
+        try:
+            self.canvas = wxaggb.FigureCanvas(self, -1, self.figure)
+        except AttributeError:
+            self.canvas = wxaggb.FigureCanvasWxAgg(self, -1, self.figure)
 
         self.sizer = wx.BoxSizer(wx.VERTICAL)
         self.add_toolbar()
