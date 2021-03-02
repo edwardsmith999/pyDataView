@@ -143,6 +143,7 @@ class VisualiserPanel(wx.Panel):
 
     def save_dialogue(self, event, defaultFile):
         dlg = wx.FileDialog(self, defaultDir='./', defaultFile=defaultFile,
+                            wildcard="Python source (*.py)|*.py|MATLAB source (*.m)|*.m" ,
                             style=wx.FD_SAVE) 
         if (dlg.ShowModal() == wx.ID_OK):
             fpath = dlg.GetPath()
