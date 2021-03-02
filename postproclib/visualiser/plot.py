@@ -130,86 +130,114 @@ class PyplotPanel(wx.Panel):
         ppdir = os.path.realpath(__file__)
         inx = ppdir.find('/postproclib')
         ppdir = ppdir[:inx]
-        script = self.minimalscript(plottype=self.parent.plottype,
-                                    fdir=self.parent.fdir,
-                                    ppdir=ppdir, 
-                                    fieldname = self.parent.fieldname, 
-                                    startrec=self.parent.rec, 
-                                    endrec = self.parent.rec+self.parent.recwidth, 
-                                    comp = self.parent.component, 
-                                    norm = self.parent.normal,
-                                    bins = self.parent.bin,
-                                    binwidth = self.parent.binwidth)
+
+        from .minimalscript import minimalscript
+
+        extension = fpath.split(".")[-1]
+        if (extension == "py"):
+            scripttype = "python"
+        elif (extension == "m"):
+            scripttype = "matlab"
+        else:
+            raise ValueError("Script extension shoule be *.py or *.m") 
+
+        script = minimalscript(scripttype=scripttype,
+                               plottype=self.parent.plottype,
+                               fdir=self.parent.fdir,
+                               ppdir=ppdir, 
+                               fieldname = self.parent.fieldname, 
+                               startrec=self.parent.rec, 
+                               endrec = self.parent.rec+self.parent.recwidth, 
+                               comp = self.parent.component, 
+                               norm = self.parent.normal,
+                               bins = self.parent.bin,
+                               binwidth = self.parent.binwidth)
 
         with open(fpath,'w+') as f:
             f.write(script)
 
-    def minimalscript(self, plottype, fdir, ppdir, fieldname, 
-                      startrec, endrec, comp, norm, bins, binwidth):
+        return
 
-        script=r"""
-import matplotlib.pyplot as plt
-import numpy as np
-import sys
+        # script = self.minimalscript(plottype=self.parent.plottype,
+                                    # fdir=self.parent.fdir,
+                                    # ppdir=ppdir, 
+                                    # fieldname = self.parent.fieldname, 
+                                    # startrec=self.parent.rec, 
+                                    # endrec = self.parent.rec+self.parent.recwidth, 
+                                    # comp = self.parent.component, 
+                                    # norm = self.parent.normal,
+                                    # bins = self.parent.bin,
+                                    # binwidth = self.parent.binwidth)
 
-ppdir = '{0}'
-sys.path.append(ppdir)
-import postproclib as ppl
+        #with open(fpath,'w+') as f:
+        #    f.write(script)
 
-normal ={6}
-component={3}
-startrec={4}
-endrec={5}
+    # def minimalscript(self, plottype, fdir, ppdir, fieldname, 
+                      # startrec, endrec, comp, norm, bins, binwidth):
 
-#Get Post Proc Object
-fdir = '{1}'
-PPObj = ppl.All_PostProc(fdir)
-print(PPObj)
+        # script=r"""
+# import matplotlib.pyplot as plt
+# import numpy as np
+# import sys
 
-#Get plotting object
-plotObj = PPObj.plotlist['{2}']
-""".format(ppdir, fdir, fieldname, str(comp), str(startrec), str(endrec), str(norm))
+# ppdir = '{0}'
+# sys.path.append(ppdir)
+# import postproclib as ppl
 
-        if plottype == "Profile":
-            script += r"""
-#Get profile
-x, y = plotObj.profile(axis=normal, 
-           startrec=startrec, 
-           endrec=endrec)
+# normal ={6}
+# component={3}
+# startrec={4}
+# endrec={5}
 
-#Plot only normal component
-fig, ax = plt.subplots(1,1)
-ax.plot(x,y[:,component])
-plt.show()
-"""
+# #Get Post Proc Object
+# fdir = '{1}'
+# PPObj = ppl.All_PostProc(fdir)
+# print(PPObj)
 
-        elif plottype == "Contour":
-            script += r"""
-#Get Contour
-naxes = [0,1,2]
-naxes.remove(normal)
-bins = {0}
-binwidth = {1}
-binlimits = [None]*3
-binlimits[normal] = (bins-binwidth, 
-                     bins+binwidth+1) #Python +1 slicing
+# #Get plotting object
+# plotObj = PPObj.plotlist['{2}']
+# """.format(ppdir, fdir, fieldname, str(comp), str(startrec), str(endrec), str(norm))
 
-ax1, ax2, data = plotObj.contour(axes=naxes, 
-                                 startrec=startrec,
-                                 endrec=endrec,
-                                 binlimits=binlimits,
-                                 missingrec='returnzeros')
+        # if plottype == "Profile":
+            # script += r"""
+# #Get profile
+# x, y = plotObj.profile(axis=normal, 
+           # startrec=startrec, 
+           # endrec=endrec)
 
-fig, ax = plt.subplots(1,1)
-cmap = plt.cm.RdYlBu_r
-colormesh = ax.pcolormesh(ax1, ax2, data[:,:,component], 
-                                    cmap=cmap)
-plt.colorbar(colormesh)
-plt.axis('tight')
-plt.show()
-""".format(str(bins), str(binwidth))
+# #Plot only normal component
+# fig, ax = plt.subplots(1,1)
+# ax.plot(x,y[:,component])
+# plt.show()
+# """
+
+        # elif plottype == "Contour":
+            # script += r"""
+# #Get Contour
+# naxes = [0,1,2]
+# naxes.remove(normal)
+# bins = {0}
+# binwidth = {1}
+# binlimits = [None]*3
+# binlimits[normal] = (bins-binwidth, 
+                     # bins+binwidth+1) #Python +1 slicing
+
+# ax1, ax2, data = plotObj.contour(axes=naxes, 
+                                 # startrec=startrec,
+                                 # endrec=endrec,
+                                 # binlimits=binlimits,
+                                 # missingrec='returnzeros')
+
+# fig, ax = plt.subplots(1,1)
+# cmap = plt.cm.RdYlBu_r
+# colormesh = ax.pcolormesh(ax1, ax2, data[:,:,component], 
+                                    # cmap=cmap)
+# plt.colorbar(colormesh)
+# plt.axis('tight')
+# plt.show()
+# """.format(str(bins), str(binwidth))
                    
-        return script 
+        # return script 
         
 
 
