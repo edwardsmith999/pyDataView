@@ -8,14 +8,14 @@ import sys
 import shutil
 import glob
 
-from mdpostproc import MD_PostProc
-from mdfields import (MD_mField, MD_vField, MD_TField, 
+from .mdpostproc import MD_PostProc
+from .mdfields import (MD_mField, MD_vField, MD_TField, 
                       MD_momField, MD_dField)
-from headerdata import MDHeaderData
-from writecolormap import WriteColorMap
+from .headerdata import MDHeaderData
+from .writecolormap import WriteColorMap
 sys.path.insert(0,'../')
 from misclib import Chdir
-from vmd_reformat import VmdReformat
+from .vmd_reformat import VmdReformat
 
 
 class VMDFields:

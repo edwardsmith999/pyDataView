@@ -8,7 +8,7 @@
 
 import os
 
-from pplexceptions import ScriptMissing
+from .pplexceptions import ScriptMissing
 
 class Chdir:          
     """
@@ -92,7 +92,7 @@ class VmdReformat:
             with open(self.fdir + '/' + self.fname.replace('temp','out')): pass
             self.Reformatted = True
         except IOError:
-            print 'Reformat unsuccessful'   
+            print('Reformat unsuccessful')
             raise
 
     def run_vmd(self):
@@ -102,9 +102,9 @@ class VmdReformat:
                 with open('./'   + self.fdir + '/' + self.fname.replace('temp','out')): pass
                 os.system('vmd ' + self.fdir + '/' + self.fname.replace('temp','out'))
             except IOError:
-                print 'vmd_out.dcd file missing in run_vmd  -- have you called reformat?'
+                print('vmd_out.dcd file missing in run_vmd  -- have you called reformat?')
         else: 
-            print 'VmdReformat.reformat() must be called before VmdReformat.run_vmd()'
+            print('VmdReformat.reformat() must be called before VmdReformat.run_vmd()')
 
 if __name__ == "__main__": 
 
