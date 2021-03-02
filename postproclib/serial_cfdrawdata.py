@@ -3,9 +3,9 @@ import numpy as np
 import os
 import glob
 
-from rawdata import RawData
-from headerdata import Serial_CFD_HeaderData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .headerdata import Serial_CFD_HeaderData
+from .pplexceptions import DataNotAvailable
 
 class Serial_CFD_RawData(RawData):
     
@@ -26,7 +26,7 @@ class Serial_CFD_RawData(RawData):
 
         try:
             self.header = self.read_header(fdir)
-            print(self.header)
+            print((self.header))
         except IOError:
             raise DataNotAvailable
 
@@ -66,7 +66,7 @@ class Serial_CFD_RawData(RawData):
         gridx = np.linspace(+self.dx/2., self.xL -self.dx/2., num=self.nrx)
         # NOTE SHIFTED BY HALF A CELL SO IT MATCHES THE OVERLAPPED MD CASE
         gridy = np.linspace(-self.dy/2., self.yL +self.dy/2., num=self.nry)-self.dy
-        print(self.yL,self.ny,self.dy,gridy)
+        print((self.yL,self.ny,self.dy,gridy))
         gridz = np.linspace(+self.dz/2., self.zL -self.dz/2., num=self.nrz)
         grid = [gridx,gridy,gridz]
         return grid 
@@ -90,7 +90,7 @@ class Serial_CFD_RawData(RawData):
             maxrec = int(sortedlist[-1].split('.')[-1])
             
         else:
-            print('Neither ' + self.fname + ' nor ' + self.fname + '.* exist.')
+            print(('Neither ' + self.fname + ' nor ' + self.fname + '.* exist.'))
             raise DataNotAvailable
 
         return maxrec
@@ -137,14 +137,14 @@ class Serial_CFD_RawData(RawData):
                     if missingrec is 'raise':
                         quit('Unable to find file ' + filepath)    
                     else:
-                        print('Unable to find file ' + filepath)
+                        print(('Unable to find file ' + filepath))
                         return_zeros = True
 
                 istart = plusrec*recitems
                 iend = istart + recitems
                 if (verbose):
-                    print('Reading {0:s} rec {1:5d}'.format(
-                          self.fname,startrec+plusrec))
+                    print(('Reading {0:s} rec {1:5d}'.format(
+                          self.fname,startrec+plusrec)))
                 if return_zeros:
                     bindata = np.zeros([ self.nrx,self.nry,self.nrz,
                                          self.nperbin ,nrecs ])
@@ -159,10 +159,10 @@ class Serial_CFD_RawData(RawData):
                 fobj = open(self.fdir+self.fname,'rb')
             except:
                 if missingrec is 'raise':
-                    print('Unable to find file ' + self.fname)
+                    print(('Unable to find file ' + self.fname))
                     raise DataNotAvailable
                 elif missingrec is 'returnzeros':
-                    print('Unable to find file ' + self.fname)
+                    print(('Unable to find file ' + self.fname))
                     return_zeros = True
 
             # Seek to correct point in the file
@@ -172,18 +172,18 @@ class Serial_CFD_RawData(RawData):
                 recbytes = 8*recitems
             else:
                 if missingrec is 'raise':
-                    print('Unable to find file ' + self.fname)
+                    print(('Unable to find file ' + self.fname))
                     raise DataNotAvailable
                 elif missingrec is 'returnzeros':
-                    print('Unable to find file ' + self.fname)
+                    print(('Unable to find file ' + self.fname))
                     return_zeros = True
 
             seekbyte = startrec*recbytes
             fobj.seek(seekbyte)
 
             if (verbose):
-                print('Reading {0:s} recs {1:5d} to {2:5d}'.format(
-                      self.fname,startrec,endrec))
+                print(('Reading {0:s} recs {1:5d} to {2:5d}'.format(
+                      self.fname,startrec,endrec)))
 
             # Get data and reshape with fortran array ordering
             if return_zeros:
@@ -196,7 +196,7 @@ class Serial_CFD_RawData(RawData):
             fobj.close()
 
         if (verbose):
-            print('Reshaping and transposing {0:s} '.format(self.fname))
+            print(('Reshaping and transposing {0:s} '.format(self.fname)))
 
         # Reshape bindata
         bindata = np.reshape( bindata,
@@ -212,9 +212,9 @@ class Serial_CFD_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('bindata.shape = {0:s}'.format(str(bindata.shape)))
-                print('Extracting bins {0:s} from {1:s} '.format(
-                      str(binlimits),self.fname))
+                print(('bindata.shape = {0:s}'.format(str(bindata.shape))))
+                print(('Extracting bins {0:s} from {1:s} '.format(
+                      str(binlimits),self.fname)))
             # Defaults
             lower = [0]*3
             upper = [i for i in bindata.shape] 
@@ -232,7 +232,7 @@ class Serial_CFD_RawData(RawData):
 
 
             if (verbose):
-                print('new bindata.shape = {0:s}'.format(str(bindata.shape)))
+                print(('new bindata.shape = {0:s}'.format(str(bindata.shape))))
 
         return bindata
         

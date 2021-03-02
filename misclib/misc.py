@@ -3,7 +3,7 @@
 import os
 import numpy as np
 from matplotlib.colors import colorConverter
-import latex2utf
+from . import latex2utf
 from math import log10, floor
 import math as maths
 import re
@@ -196,21 +196,21 @@ def round_to_n(x,p):
 
 def latextounicode(strings):
 
-    if type(strings) is unicode:
+    if type(strings) is str:
         string = strings.encode('utf8')
         try:
-            strings = strings.replace('rho','\xcf\x81')
+            strings = strings.replace('rho','ρ')
         except UnicodeDecodeError:
             pass
     if type(strings) is str:
         try:
-            strings = strings.replace('rho','\xcf\x81')
+            strings = strings.replace('rho','ρ')
         except UnicodeDecodeError:
             pass
     elif type(strings) is list:
         for i, string in enumerate(strings):
             try:
-               strings[i] = string.replace('rho','\xcf\x81')
+               strings[i] = string.replace('rho','ρ')
             except UnicodeDecodeError:
                 pass
             #latex2utf.latex2utf(string)
@@ -220,15 +220,15 @@ def latextounicode(strings):
 
 def unicodetolatex(strings):
 
-    if type(strings) is unicode:
-        string = strings.encode('utf8')
-        strings = string.replace('\xcf\x81','rho')
     if type(strings) is str:
-        strings = string.replace('\xcf\x81','rho')
+        #string = strings.encode('utf-8')
+        strings = strings.replace('ρ','rho')
+    if type(strings) is str:
+        strings = strings.replace('ρ','rho')
     elif type(strings) is list:
         for i, string in enumerate(strings):
-            string = string.encode('utf8')
-            strings[i] = string.replace('\xcf\x81','rho')
+            #string = string.encode('utf-8')
+            strings[i] = string.replace('ρ','rho')
 
     return strings
 

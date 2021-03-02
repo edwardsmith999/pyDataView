@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 import numpy as np
 
-from field import Field
-from openfoamrawdata import OpenFOAM_RawData
+from .field import Field
+from .openfoamrawdata import OpenFOAM_RawData
 
 # ============================================================================
 # OpenFOAMField base class
@@ -188,8 +188,8 @@ class OpenFOAM_mugradvField(OpenFOAM_complexField):
     def read(self, startrec, endrec, binlimits=None, **kwargs):
 
         if (self.rho == None):
-            print('OpenFOAM_mugradvField requires rho, set by ' +
-                  'OpenFOAM_mugradvField.set_rho(rho).')
+            print(('OpenFOAM_mugradvField requires rho, set by ' +
+                  'OpenFOAM_mugradvField.set_rho(rho).'))
  
         vdata = self.vField.read(startrec, endrec, binlimits=binlimits, 
                                  **kwargs)

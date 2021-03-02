@@ -2,8 +2,8 @@
 import numpy as np
 import os
 
-from rawdata import RawData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .pplexceptions import DataNotAvailable
 
 class PsiBoil_RawData(RawData):
     
@@ -17,7 +17,7 @@ class PsiBoil_RawData(RawData):
 
     def get_grid(self):
         try:
-            fobj = 
+            fobj = "PUTPSIBOILFILETYPEHERE"
         except IOError:
             raise DataNotAvailable
 
@@ -97,7 +97,7 @@ class PsiBoil_RawData(RawData):
                     data = np.reshape(data,[self.nrz,self.nrx,self.nry,self.npercell],
                                       order='F')
                 except ValueError:
-                    print('Data in CFD file seems wrong -- maybe it includes halos? \n'
+                    print('Data in CFD file seems wrong -- maybe it includes halos?'
                           'Attempting to correct')
                     if (data.shape[0] > self.nrz*self.nrx*self.nry*self.npercell):
                         data = np.reshape(data,[self.nrz+1,self.nrx+1,self.nry,self.npercell],
@@ -117,8 +117,8 @@ class PsiBoil_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('subdata.shape = {0:s}'.format(str(subdata.shape)))
-                print('Extracting bins {0:s}'.format(str(binlimits)))
+                print(('subdata.shape = {0:s}'.format(str(subdata.shape))))
+                print(('Extracting bins {0:s}'.format(str(binlimits))))
 
             # Defaults
             lower = [0]*3

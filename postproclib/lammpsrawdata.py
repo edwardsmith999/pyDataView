@@ -1,7 +1,7 @@
 import numpy as np
 
-from rawdata import RawData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .pplexceptions import DataNotAvailable
 
 class LAMMPS_RawData(RawData):
 
@@ -81,7 +81,7 @@ class LAMMPS_RawData(RawData):
             for name in readnames:
                 readindices.append(linesplit.index(name))
         else:
-            print("Couldn't find Chunk coordinate info in "+self.fname)
+            print(("Couldn't find Chunk coordinate info in "+self.fname))
             raise DataNotAvailable
 
         return readindices
@@ -97,8 +97,8 @@ class LAMMPS_RawData(RawData):
         bindata  = np.empty(nrecs*recitems)
 
         if (verbose):
-            print('Reading {0:s} recs {1:5d} to {2:5d}'.format(
-                  self.fname,startrec,endrec))
+            print(('Reading {0:s} recs {1:5d} to {2:5d}'.format(
+                  self.fname,startrec,endrec)))
 
         cnt = 0
         for plusrec in range(0, nrecs):
@@ -127,9 +127,9 @@ class LAMMPS_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('bindata.shape = {0:s}'.format(str(bindata.shape)))
-                print('Extracting bins {0:s} from {1:s} '.format(
-                      str(binlimits),self.fname))
+                print(('bindata.shape = {0:s}'.format(str(bindata.shape))))
+                print(('Extracting bins {0:s} from {1:s} '.format(
+                      str(binlimits),self.fname)))
             # Defaults
             lower = [0]*3
             upper = [i for i in bindata.shape] 
@@ -147,7 +147,7 @@ class LAMMPS_RawData(RawData):
 
 
             if (verbose):
-                print('new bindata.shape = {0:s}'.format(str(bindata.shape)))
+                print(('new bindata.shape = {0:s}'.format(str(bindata.shape))))
 
     
         return bindata

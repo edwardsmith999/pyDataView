@@ -6,10 +6,10 @@ import glob
 #import collections
 
 
-from serial_cfdfields import *
-from headerdata import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir 
+from .serial_cfdfields import *
+from .headerdata import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir 
 
 class Serial_CFD_PostProc(PostProc):
 
@@ -30,7 +30,7 @@ class Serial_CFD_PostProc(PostProc):
                                 "continuum_tau_yy")
 
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
             
         self.fields_present = []

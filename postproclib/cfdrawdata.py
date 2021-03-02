@@ -2,8 +2,8 @@
 import numpy as np
 import os
 
-from rawdata import RawData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .pplexceptions import DataNotAvailable
 
 class CFD_RawData(RawData):
     
@@ -134,8 +134,8 @@ class CFD_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('subdata.shape = {0:s}'.format(str(subdata.shape)))
-                print('Extracting bins {0:s}'.format(str(binlimits)))
+                print(('subdata.shape = {0:s}'.format(str(subdata.shape))))
+                print(('Extracting bins {0:s}'.format(str(binlimits))))
 
             # Defaults
             lower = [0]*3

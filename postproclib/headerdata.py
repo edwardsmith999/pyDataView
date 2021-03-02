@@ -181,7 +181,7 @@ class openfoam_HeaderData:
                     key, value = split
                     Out[key] = value.strip(';')
                 else:
-                    print("Error, two values not a statement", line)
+                    print(("Error, two values not a statement", line))
             #Otherwise we have to parse as needed
             elif len(split) > 2:
                 key = split[0]

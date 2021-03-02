@@ -1,7 +1,7 @@
 import os
-from openfoamfields import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir 
+from .openfoamfields import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir 
 import glob
 
 class OpenFOAM_PostProc(PostProc):
@@ -17,7 +17,7 @@ class OpenFOAM_PostProc(PostProc):
         # Check directory exists before instantiating object and check 
         # which files associated with plots are in directory
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
 #        # Raise if no results in directory
@@ -66,11 +66,11 @@ class OpenFOAM_PostProc(PostProc):
                                                    .replace("\n","")
                                                    .split(" ")[-1])
                         except ValueError:
-                            print("Convert failed in OpenFOAM_reader", line)
+                            print(("Convert failed in OpenFOAM_reader", line))
 
             if "processor" in root and not parallel_run:
                 parallel_run = True
-                print("Assuming parallel run as processor folder found in " + self.resultsdir)
+                print(("Assuming parallel run as processor folder found in " + self.resultsdir))
 
         #Check if data files exist
         if not controlDictfound:
@@ -84,9 +84,9 @@ class OpenFOAM_PostProc(PostProc):
             raise IOError("Writecontrol keyword not found in controlDict")
 
 
-        print("parallel_run = ", parallel_run, 
+        print(("parallel_run = ", parallel_run, 
               "writeInterval = ", writeInterval, 
-              "writecontrol = ", writecontrol)
+              "writecontrol = ", writecontrol))
         if parallel_run:
             path = self.resultsdir + "processor0/" + str(writeInterval) + '/*'
             if not os.path.isdir(path):
@@ -113,16 +113,16 @@ class OpenFOAM_PostProc(PostProc):
                             elif "volSymmTensorField" in line:
                                 S = OpenFOAM_SymmTensorField(self.resultsdir, fname, parallel_run)
                             elif "surfaceScalarField" in line:
-                                print(filename, "is a surfaceScalarField")
+                                print((filename, "is a surfaceScalarField"))
                                 break
                             else:
                                 continue
                             self.plotlist.update({fname:S})
             except IOError:
-                print("Error reading ", filename)
+                print(("Error reading ", filename))
                 pass
             except IndexError:
-                print("Error reading ", filename)
+                print(("Error reading ", filename))
                 pass
             except:
                 raise

@@ -50,7 +50,7 @@ class RawData(object):
         elif (glob.glob(fdir+fname+'.*')):
             self.separate_outfiles = True 
         else:
-            print('Neither ' + fname + ' nor ' + fname + '.* exist.')
+            print(('Neither ' + fname + ' nor ' + fname + '.* exist.'))
             raise DataNotAvailable
 
         #Define grid properties
@@ -76,9 +76,9 @@ class RawData(object):
                          "dx","dy","dz"]
         for attr in expected_attr:
             if(not hasattr(self, attr)):
-                print("RawData class ", self, 
+                print(("RawData class ", self, 
                       " must have attribute ", 
-                      attr, " defined in constructor")
+                      attr, " defined in constructor"))
                 raise AttributeError
 
 

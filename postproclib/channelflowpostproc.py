@@ -1,8 +1,8 @@
 import os
 import glob
-from channelflowfields import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir
+from .channelflowfields import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir
 
 class channelflow_PostProc(PostProc):
 
@@ -17,7 +17,7 @@ class channelflow_PostProc(PostProc):
         # Check directory exists before instantiating object and check 
         # which files associated with plots are in directory
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
         possibles = {'channelflow Velocity': Channelflow_vField,
@@ -30,7 +30,7 @@ class channelflow_PostProc(PostProc):
             raise NoResultsInDir
 
         self.plotlist = {}
-        for key, field in possibles.items():
+        for key, field in list(possibles.items()):
             try:
                 self.plotlist[key] = field(self.resultsdir)
             except AssertionError:

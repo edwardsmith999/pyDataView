@@ -11,13 +11,13 @@ except:
             + '\nCPLField.?_both instead, where ? is profile/contour/etc, '
             + '\nin which no resampling is performed.') 
 
-import cfdfields
-import mdfields
-import lammpsfields
-import serial_cfdfields
-import openfoamfields
-from headerdata import HeaderData
-from field import Field
+from . import cfdfields
+from . import mdfields
+from . import lammpsfields
+from . import serial_cfdfields
+from . import openfoamfields
+from .headerdata import HeaderData
+from .field import Field
 
 class CPLField(Field):
     

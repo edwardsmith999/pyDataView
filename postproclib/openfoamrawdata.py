@@ -2,9 +2,9 @@
 import numpy as np
 import os
 
-from rawdata import RawData
-from headerdata import openfoam_HeaderData
-from pplexceptions import DataNotAvailable, OutsideRecRange
+from .rawdata import RawData
+from .headerdata import openfoam_HeaderData
+from .pplexceptions import DataNotAvailable, OutsideRecRange
 
 class OpenFOAM_RawData(RawData):
     
@@ -272,16 +272,16 @@ class OpenFOAM_RawData(RawData):
                     print(flist)
                 return flist
 
-            checkopenbracket = fobj.next()
+            checkopenbracket = next(fobj)
             if (checkopenbracket[0] != '('):
                 raise
 
             herelist = []
             for lineno in range(nitems):
-                line = fobj.next()
+                line = next(fobj)
                 herelist.append(float(line))
 
-            checkclosebracket = fobj.next()
+            checkclosebracket = next(fobj)
             if (checkclosebracket[0] != ')'):
                 raise
     
@@ -296,7 +296,7 @@ class OpenFOAM_RawData(RawData):
 
         #If entryname is not found in file, data is not available
         if (not found):
-            print("Entry for number of cells ", entryname, " not consistent with file ", fobj.name )
+            print(("Entry for number of cells ", entryname, " not consistent with file ", fobj.name ))
             raise IOError
 
         return flist
@@ -541,8 +541,8 @@ class OpenFOAM_RawData(RawData):
         if (binlimits):
 
             if (verbose):
-                print('odata.shape = {0:s}'.format(str(odata.shape)))
-                print('Extracting bins {0:s}'.format(str(binlimits)))
+                print(('odata.shape = {0:s}'.format(str(odata.shape))))
+                print(('Extracting bins {0:s}'.format(str(binlimits))))
 
             # Defaults
             lower = [0]*3

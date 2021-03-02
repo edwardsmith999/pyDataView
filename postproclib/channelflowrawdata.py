@@ -8,8 +8,8 @@ try:
 except:
     print("h5py package not avilable -- using ascii conversion")
 
-from rawdata import RawData
-from pplexceptions import DataNotAvailable
+from .rawdata import RawData
+from .pplexceptions import DataNotAvailable
 
 class Channelflow_RawData(RawData):
     
@@ -98,7 +98,7 @@ class Channelflow_RawData(RawData):
             try:
                 exec('self.'+ x.replace('==','=').strip(' '))
             except:
-                print("Can't save" + ' self.'+ x.replace('==','=').strip(' '))
+                print(("Can't save" + ' self.'+ x.replace('==','=').strip(' ')))
 
 
     def get_binvolumes(self,binlimits=None):
@@ -150,7 +150,7 @@ class Channelflow_RawData(RawData):
                 integer, extension = name.split('.')
                 integer = int(integer)
             except ValueError:
-                print("Unrecognised fileno:", name.split('.'))
+                print(("Unrecognised fileno:", name.split('.')))
                 raise DataNotAvailable
                 integer = 10000000000
 
@@ -174,8 +174,8 @@ class Channelflow_RawData(RawData):
             pass
         else: 
             syscall = self.ascii2field + ' -p ' + filebase + '.h5 ' + filebase + '.asc'
-            print("Output file in ascii format not founts, " + 
-                  "attempting to convert using field2ascii routine")
+            print(("Output file in ascii format not founts, " + 
+                  "attempting to convert using field2ascii routine"))
             try:
                 os.system(syscall)
             except:
@@ -226,12 +226,12 @@ class Channelflow_RawData(RawData):
         lower = np.empty(3); upper = np.empty(3)
 
         if nrecs > len(self.subdomlist):
-            print('Number of records ', nrecs , ' greater than ', len(self.subdomlist) ,
-                 ' available:', self.subdomlist)
+            print(('Number of records ', nrecs , ' greater than ', len(self.subdomlist) ,
+                 ' available:', self.subdomlist))
         elif startrec + nrecs > len(self.subdomlist):
-            print('Range of records ', startrec, ' to ', endrec , ' outside ', 
+            print(('Range of records ', startrec, ' to ', endrec , ' outside ', 
                   startrec, ' to ', len(self.subdomlist)+startrec,
-                  ' available:', self.subdomlist)
+                  ' available:', self.subdomlist))
 
         def add_laminar(vin,lims):
             v_laminar = self.cosinegrid(a=-1.0, b=1.0, Npoints=self.nry)
@@ -322,7 +322,7 @@ class Channelflow_RawData(RawData):
     def read_h5field(self,fpath):
         #import h5py
         with h5py.File(fpath,'r') as fobj:
-            data = fobj[u'data'].items()[0][1]
+            data = list(fobj['data'].items())[0][1]
             return np.transpose(np.array(data),(1,2,3,0))
 
 

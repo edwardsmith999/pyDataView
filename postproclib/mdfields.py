@@ -1,8 +1,8 @@
 #! /usr/bin/env python
 import numpy as np
-from field import Field
-from mdrawdata import MD_RawData
-from pplexceptions import DataMismatch, DataNotAvailable
+from .field import Field
+from .mdrawdata import MD_RawData
+from .pplexceptions import DataMismatch, DataNotAvailable
 
 # ============================================================================
 # MDField base class
@@ -26,7 +26,7 @@ class MDField(Field):
         #                          compatibility with old integer
         #                          format for mbins, mflux, etc
         # THIS FIX REQUIRED FOR ALL FILES MADE BEFORE 25/02/2015
-        from headerdata import MDHeaderData
+        from .headerdata import MDHeaderData
         header = MDHeaderData(fdir)
 
         year = header.sim_date[:4]
@@ -235,7 +235,7 @@ class MD_mfluxField(MDField):
         MD_mfluxField manages mass flux field data in the form of
         molecular count over 6 cubic bin surfaces with 6 integer 
         data types per bin            
-        e.g. fnames = [mflux], msurf (default in [])
+        e.g. fnames = [mflux], msurf, dsurf_mflux (default in [])
     """
     
     dtype = 'd'
@@ -330,7 +330,7 @@ class MD_pfluxField(MDField):
         MD_vfluxField manages velocity flux field data in the form of
         velocity/stress sum over 6 cubic bin surfaces with 18 double 
         precision real data types per bin
-        e.g. fnames = totalflux, vflux, psurface (no default)
+        e.g. fnames = totalflux, vflux, psurface, dsurf_vflux (no default)
     """
 
     dtype = 'd'
@@ -338,7 +338,7 @@ class MD_pfluxField(MDField):
 
     def __init__(self,fdir,fname):
 
-        if (fname in ("psurface","vflux")):
+        if (fname in ("psurface","vflux", "dsurf_vflux")):
             self.fname = fname
             self.labels = ["xxbottom","yxbottom","zxbottom",
                            "xybottom","yybottom","zybottom",
@@ -350,7 +350,7 @@ class MD_pfluxField(MDField):
             self.nperbin = self.Raw.nperbin
             self.plotfreq = int(self.Raw.header.Nvflux_ave)
         else:
-            print("Output type '" + fname  +"' not recognised, should be psurface, vflux")
+            print(("Output type '" + fname  +"' not recognised, should be psurface, vflux"))
             raise DataNotAvailable
 
 
@@ -410,7 +410,7 @@ class MD_vField(MD_complexField):
             self.mField = MD_mField(fdir,fname='msnap')
             self.pField = MD_pField(fdir,fname='vsnap')
         else:
-            print("Record type ", rectype, " not understood")
+            print(("Record type ", rectype, " not understood"))
             raise DataNotAvailable
 
         Field.__init__(self,self.pField.Raw)
@@ -748,13 +748,13 @@ class MD_EnergyField(MD_complexField):
         self.inherit_parameters(self.EField)
 
         if ((self.mField.plotfreq != self.EField.plotfreq) ):
-            print("Error in MD_EField -- Nmass_ave " + 
-                  "differs from Nenergy_ave")
+            print(("Error in MD_EField -- Nmass_ave " + 
+                  "differs from Nenergy_ave"))
             raise DataMismatch
 
         if (peculiar and self.pField.plotfreq != self.EField.plotfreq):
-            print("Error in MD_EField -- Nvel_ave " +
-                  "differs from Nenergy_ave and peculiar=True ")
+            print(("Error in MD_EField -- Nvel_ave " +
+                  "differs from Nenergy_ave and peculiar=True "))
             raise DataMismatch  
 
         self.plotfreq = self.EField.plotfreq
@@ -836,13 +836,13 @@ class MD_potEnergyField(MD_complexField):
         self.inherit_parameters(self.EField)
 
         if (self.mField.plotfreq != self.EField.plotfreq):
-            print("Error in MD_EField -- Nmass_ave " + 
-                  "differs from Nenergy_ave")
+            print(("Error in MD_EField -- Nmass_ave " + 
+                  "differs from Nenergy_ave"))
             raise DataMismatch
 
         if (self.TField.plotfreq != self.EField.plotfreq):
-            print("Error in MD_EField -- NTave " +
-                  "differs from Nenergy_ave ")
+            print(("Error in MD_EField -- NTave " +
+                  "differs from Nenergy_ave "))
             raise DataMismatch  
 
         self.plotfreq = self.EField.plotfreq
@@ -871,7 +871,7 @@ class MD_potEnergyField(MD_complexField):
         Edata = self.EField.read(startrec, endrec, **kwargs)
         potdata = Edata - Tdata/2.
 
-        # Consider streaming velocity
+        # Average
         if (avgaxes != ()):
             mdata = np.sum(mdata, axis=avgaxes) 
             potdata = np.sum(potdata, axis=avgaxes) 
@@ -958,8 +958,8 @@ class MD_enthalpyField(MD_complexField):
         self.inherit_parameters(self.EField)
 
         if (self.pVAField.plotfreq != self.EField.plotfreq):
-            print("Error in MD_EField -- NpVA_ave " + 
-                  "differs from Nenergy_ave")
+            print(("Error in MD_EField -- NpVA_ave " + 
+                  "differs from Nenergy_ave"))
             raise DataMismatch
 
         self.plotfreq = self.EField.plotfreq
@@ -1763,7 +1763,7 @@ class MD_rhouECVField(MD_complexField):
         # time energy (or energy per surface)
         rhoue = momdata*Edata
 
-        print(np.sum(momdata), np.sum(Edata), np.sum(rhoue), momdata.shape, Edata.shape, rhoue.shape)
+        print((np.sum(momdata), np.sum(Edata), np.sum(rhoue), momdata.shape, Edata.shape, rhoue.shape))
 
         return rhoue
 
@@ -1779,8 +1779,8 @@ class MD_CVStressheat_Field(MD_complexField):
         elif self.velocity_loc is "surfaceinterp":
             self.vField = MD_vFieldatsurface(fdir)
         else:
-            print("velocity_loc type " + self.velocity_loc 
-                  + " not recognised, should be 'centre' or 'surfaceinterp'")
+            print(("velocity_loc type " + self.velocity_loc 
+                  + " not recognised, should be 'centre' or 'surfaceinterp'"))
             raise DataMismatch
         self.pressureField = MD_pCVField(fdir, fname='total')
         Field.__init__(self, self.vField.Raw)

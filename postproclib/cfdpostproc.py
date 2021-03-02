@@ -1,7 +1,7 @@
 import os
-from cfdfields import *
-from postproc import PostProc
-from pplexceptions import NoResultsInDir 
+from .cfdfields import *
+from .postproc import PostProc
+from .pplexceptions import NoResultsInDir 
 
 class CFD_PostProc(PostProc):
 
@@ -16,7 +16,7 @@ class CFD_PostProc(PostProc):
         # Check directory exists before instantiating object and check 
         # which files associated with plots are in directory
         if (not os.path.isdir(self.resultsdir)):
-            print("Directory " +  self.resultsdir + " not found")
+            print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
         try:
@@ -33,7 +33,7 @@ class CFD_PostProc(PostProc):
                      'CFD Dissipation': CFD_dissipField}
 
         self.plotlist = {}
-        for key, field in possibles.items(): 
+        for key, field in list(possibles.items()): 
             try:
                 self.plotlist[key] = field(self.resultsdir)
             except AssertionError:
