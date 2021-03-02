@@ -106,22 +106,26 @@ plot(x,y)
             script += r"""
 bins = {0}
 binwidth = {1}
+bns = py.list({{py.int(bins-binwidth), py.int(bins+binwidth+1)}});
+None = string(missing);
 if (normal == 0)
-    binlimits = py.list({{py.list({{bins-binwidth, bins+binwidth+1}}),string(missing),string(missing)}})
+    binlimits = py.list({{bns,None,None}});
 elseif (normal == 1)
-    binlimits = py.list({{string(missing),py.list({{bins-binwidth, bins+binwidth+1}}),string(missing)}})
+    binlimits = py.list({{None,bns,None}});
 elseif (normal == 2)
-    binlimits = py.list({{string(missing),string(missing),py.list({{bins-binwidth, bins+binwidth+1}})}})
+    binlimits = py.list({{None,None,bns}});
 end
 
 a = PObj.contour(py.list({{py.int(naxis(1)),py.int(naxis(2))}}), ...
-                py.int(startrec),py.int(endrec));
+                py.int(startrec),py.int(endrec), ...
+                pyargs('binlimits',binlimits, ...
+                "missingrec","returnzeros"));
             
 ax1 = np2mat(a{{1}});
 ax2 = np2mat(a{{2}});
 field = np2mat(a{{3}});
 
-[C,h] =contourf(ax1, ax2, field, 40);
+[C,h] =contourf(ax1, ax2, field(:,:,component+1), 40);
 set(h,'LineColor','none');
 colorbar()
 """.format(str(bins), str(binwidth))
