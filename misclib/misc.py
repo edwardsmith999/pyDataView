@@ -1,4 +1,5 @@
 #! /usr/bin/env python
+# coding:utf-8
 # Routines which are not specific to MD/CFD or CPL code
 import os
 import numpy as np
@@ -202,16 +203,23 @@ def latextounicode(strings):
             strings = strings.replace('rho','ρ')
         except UnicodeDecodeError:
             pass
+        except SyntaxError:
+            pass
+
     if type(strings) is str:
         try:
             strings = strings.replace('rho','ρ')
         except UnicodeDecodeError:
+            pass
+        except SyntaxError:
             pass
     elif type(strings) is list:
         for i, string in enumerate(strings):
             try:
                strings[i] = string.replace('rho','ρ')
             except UnicodeDecodeError:
+                pass
+            except SyntaxError:
                 pass
             #latex2utf.latex2utf(string)
 
