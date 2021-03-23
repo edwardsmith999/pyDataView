@@ -67,6 +67,30 @@ figure()
 surf(ax1, ax2, field)
 colorbar()
 
+%Example with bin limits
+bins = 5;
+binwidth = 0; %Average range above and below current bin
+bns = py.list({py.int(bins-binwidth), py.int(bins+binwidth+1)});
+None = string(missing);
+if (normal == 1)
+    binlimits = py.list({bns,None,None});
+elseif (normal == 2)
+    binlimits = py.list({None,bns,None});
+elseif (normal == 3)
+    binlimits = py.list({None,None,bns});
+end
+a = PObj.contour(py.list({py.int(naxis(1)),py.int(naxis(2))}), ...
+                py.int(startrec),py.int(endrec), ...
+                pyargs('binlimits',binlimits, ...
+                "missingrec","returnzeros"));
+ax1 = np2mat(a{1});
+ax2 = np2mat(a{2});
+field = np2mat(a{3});
+figure()
+[C,h] =contourf(ax1, ax2, field, 40);
+set(h,'LineColor','none');
+colorbar()
+
 % Solution from
 % mathworks.com/matlabcentral/answers/157347-convert-python-numpy-array-to-double      
 function data = np2mat(nparray)
