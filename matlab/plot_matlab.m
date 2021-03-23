@@ -26,11 +26,24 @@ PObj = PPObj.plotlist{py.str(fname)};
 %General low level read code
 ndarray = PObj.read(py.int(startrec), py.int(endrec));
 data = np2mat(ndarray);
- 
+
+%Plot as an image
 figure()
 imagesc(data(:,:,1,1,component)')
 colorbar()
-            
+
+%Setup Meshgrid for contour plot
+g = PObj.grid;
+x = double(g{1});
+y = double(g{2});
+z = double(g{3});
+[X,Y,Z] = meshgrid(x,y,z);
+
+%Plot contour against grid
+figure()
+contourf(X(:,:,1), Y(:,:,1), data(:,:,1,1,component)')
+colorbar()
+  
 %Get Profile
 a = PObj.profile(py.int(normal-1), py.int(startrec),py.int(endrec));
 x = a{1};
