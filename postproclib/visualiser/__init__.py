@@ -1,1 +1,2 @@
-from .mainframe import MainFrame
+from .mainframe import MainFrame, MainPanel
+

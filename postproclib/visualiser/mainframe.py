@@ -31,6 +31,14 @@ class MainFrame(wx.Frame):
         except IOError:
             print('Couldn\'t load icon')
 
+        panel = MainPanel(self, fdir)
+
+
+class MainPanel(wx.Panel):
+
+    def __init__(self, parent, fdir, catch_noresults=True):
+        super(MainPanel, self).__init__(parent)
+        self.parent = parent
         self.dirchooser = DirectoryChooserPanel(self, fdir)
 
         self.vbox = wx.BoxSizer(wx.VERTICAL)
@@ -38,7 +46,7 @@ class MainFrame(wx.Frame):
         self.SetSizer(self.vbox)
 
         self.visualiserpanel = None
-        self.new_visualiserpanel(fdir)
+        self.new_visualiserpanel(fdir, catch_noresults)
         self.fdir = fdir
 
         self.set_bindings()
@@ -56,7 +64,7 @@ class MainFrame(wx.Frame):
             self.visualiserpanel.Destroy()
             self.visualiserpanel = None
         
-    def new_visualiserpanel(self, fdir):
+    def new_visualiserpanel(self, fdir, catch_noresults=True):
 
         self.destroy_visualiserpanel()
         self.fdir = fdir    
@@ -66,7 +74,8 @@ class MainFrame(wx.Frame):
             raise
             #showMessageDlg('Invalid directory.')
         except NoResultsInDir:
-            showMessageDlg('No results in this directory.')
+            if catch_noresults:
+                showMessageDlg('No results in this directory.')
         else:
             self.visualiserpanel = newvp 
             self.vbox.Add(self.visualiserpanel, 1, wx.EXPAND, 0)
