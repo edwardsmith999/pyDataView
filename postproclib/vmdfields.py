@@ -30,7 +30,7 @@ class VMDFields:
         if fdir == None:
             self.fdir = fieldobj.fdir
         else:
-            self.fdir = fdir
+            self.fdir = os.path.join(fdir, '')
         if scriptdir == None:
             self.scriptdir = os.path.dirname(os.path.realpath(__file__))+"/"
         else:
