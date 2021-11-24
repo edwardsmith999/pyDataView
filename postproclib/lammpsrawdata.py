@@ -30,7 +30,7 @@ class LAMMPS_RawData(RawData):
             if (len(line.split()) == 3):
                 offsets.append(tell) 
 
-            if (line == ''):
+            if (line == '' or line == b''):
                 break
 
         return offsets
@@ -70,18 +70,18 @@ class LAMMPS_RawData(RawData):
         return [gridx, gridy, gridz] 
 
     def get_readindices(self, readnames):
-        
+       
         self.fobj.seek(0)
         self.fobj.readline()
         self.fobj.readline()
         line = self.fobj.readline()
-        if ("Chunk Coord1 Coord2 Coord3" in line):
+        if (b"Chunk Coord1 Coord2 Coord3" in line):
             readindices = []
-            linesplit = line.split()[1:] # Ignore # character at beginning
+            linesplit = line.decode("ascii").split()[1:] # Ignore # character at beginning
             for name in readnames:
                 readindices.append(linesplit.index(name))
         else:
-            print(("Couldn't find Chunk coordinate info in "+self.fname))
+            print("Couldn't find Chunk coordinate info in "+self.fname)
             raise DataNotAvailable
 
         return readindices
