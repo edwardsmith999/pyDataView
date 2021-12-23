@@ -349,8 +349,11 @@ class MD_pfluxField(MDField):
             MDField.__init__(self,fdir)
             self.nperbin = self.Raw.nperbin
             self.plotfreq = int(self.Raw.header.Nvflux_ave)
+        elif fname in ("total"):
+            raise DataNotAvailable
         else:
-            print(("Output type '" + fname  +"' not recognised, should be psurface, vflux"))
+            print(("Output type '" + fname  +"' not recognised in MD_pfluxField" +
+                   " should be psurface, vflux or dsurf_vflux"))
             raise DataNotAvailable
 
 
