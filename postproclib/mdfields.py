@@ -203,6 +203,9 @@ class MD_EField(MDField):
             self.plotfreq = int(self.Raw.header.Neflux_ave)
         elif fname == 'ebins':
             self.plotfreq = int(self.Raw.header.Nenergy_ave)
+        #Pressure scalar is written out as trace of pressure tensor
+        elif fname == 'P':
+            self.plotfreq = int(self.Raw.header.Nvflux_ave)
         else:
             'Unknown MD_EField type ', fname
             raise DataNotAvailable
@@ -1689,6 +1692,33 @@ class MD_pCVField(MD_complexField):
 
         return pflux
 
+
+class MD_scalarPCVField(MD_complexField):
+
+    def __init__(self, fdir, fname, peculiar=True):
+
+        self.fname = "P"
+        self.fdir = fdir
+        self.PField = MD_pCVField(fdir, fname)
+
+        Field.__init__(self,self.PField.Raw)
+        self.inherit_parameters(self.PField)
+        self.peculiar = peculiar
+        self.labels = ["P"]
+        self.nperbin = 1
+
+    def read(self, startrec, endrec, peculiar=None,
+             verbose=False, **kwargs):
+
+        Pfield = self.PField.read(startrec, endrec, **kwargs)
+        return (Pfield[...,[0]]+Pfield[...,[5]]+Pfield[...,[8]])/3.
+        
+#    def averaged_data(self, startrec, endrec, 
+#                      avgaxes=(), peculiar=None, **kwargs):
+#        Pfield = self.PField.averaged_data(startrec, endrec, 
+#                                          avgaxes=avgaxes, **kwargs)
+
+#        return (Pfield[...,0]+Pfield[...,5]+Pfield[...,8])/3.
 
 class MD_eFieldatsurface(MD_complexField):
 

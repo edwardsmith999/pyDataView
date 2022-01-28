@@ -376,4 +376,45 @@ class MD_RawData(RawData):
                 print(('new bindata.shape = {0:s}'.format(str(bindata.shape))))
 
         return bindata
-        
+
+
+    def write(self, data, fdir, fname, startrec=0, endrec=None, dryrun=False, verbose=False):
+
+        #Check this is a 5D array
+        assert len(data.shape) == 5
+
+        #Use default names and directory for object if not specified
+        #if fname is None:
+        #    fname = self.fname
+        #if fdir is None:
+        #    fdir = self.fdir
+
+        #Number of records is based on size of data if not specified
+        if endrec is None:
+            endrec = data.shape[3]
+
+        # Store how many records are to be written
+        nrecs = endrec - startrec  
+        if nrecs > data.shape[3]:
+            raise IOError("Requested startrec and endrec bigger than datasize")
+
+        print("startrec=",startrec, "endrec=", endrec, "nrecs=", nrecs, "data size=", data.shape)
+
+        # Check whether the records are written separately
+        # If so,
+        if (self.separate_outfiles):
+
+            # Loop through files and append data
+            for plusrec in range(0,nrecs):
+                filepath = fdir+fname+'.'+"%07d"%(startrec+plusrec)
+                print("Writing", data[:,:,:,plusrec,:].T.shape, " to ", filepath)
+                if (not dryrun):
+                    with open(filepath,'wb+') as fobj:
+                        #We need the transpose to keep in Fortran order
+                        fobj.write(data[:,:,:,[plusrec],:].T.tobytes())
+        #Otherwise,
+        else:
+            print("Writing", data[:,:,:,startrec:endrec,:].shape, " to ", fdir+fname)
+            if (not dryrun):
+                with open(fdir+fname,'wb+') as fobj:
+                    fobj.write(data[:,:,:,startrec:endrec,:].T.tobytes())

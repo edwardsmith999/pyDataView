@@ -33,7 +33,7 @@ class MD_PostProc(PostProc):
                                 "viscometrics", "rdf", "rdf3d", "ssf", "Fext",
                                 "Tbins", "vPDF", "msolv", "mpoly", "vsolv",
                                 "vpoly", "ebins","hfVA","hfVA_k","hfVA_c",
-                                "msurf", "dsurf_mflux", "dsurf_vflux", "combin")        
+                                "msurf", "dsurf_mflux", "dsurf_vflux", "combin", "P")        
 
         if (not os.path.isdir(self.resultsdir)):
             print(("Directory " +  self.resultsdir + " not found"))
@@ -107,6 +107,10 @@ class MD_PostProc(PostProc):
             M1 = MD_Centre_of_Mass_Field(self.resultsdir,**kwargs)
             self.plotlist.update({'centre of mass':M1})
 
+        #Scalar pressure
+        if 'P' in (self.fieldfiles1):
+            KE1 = MD_EField(self.resultsdir,fname='P', **kwargs)
+            self.plotlist.update({'P':KE1})
 
 
 
@@ -289,6 +293,12 @@ class MD_PostProc(PostProc):
             self.plotlist.update({'CV_pressure':stress1})
             stress1 = MD_CVStressheat_Field(self.resultsdir, **kwargs)
             self.plotlist.update({'stressheat CV':stress1})
+            stress1 = MD_scalarPCVField(self.resultsdir,'total', **kwargs)
+            self.plotlist.update({'P':stress1})
+            stress1 = MD_scalarPCVField(self.resultsdir,'psurface', **kwargs)
+            self.plotlist.update({'P^C':stress1})
+            stress1 = MD_scalarPCVField(self.resultsdir,'vflux', **kwargs)
+            self.plotlist.update({'P^K':stress1})
 
         if ('ebins' in self.fieldfiles1 and
             'mflux' in self.fieldfiles1):
