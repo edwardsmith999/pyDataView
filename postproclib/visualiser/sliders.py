@@ -12,7 +12,7 @@ class SliderPlusWidth(wx.Panel):
         self.slider = JumpSlider(self)
         #self.slider = wx.Slider(self)
         spintext = wx.StaticText(self,-1,label="\u00B1",size=(10,-1))
-        self.spin = wx.SpinCtrl(self,value='0',initial=0,size=(50,-1))
+        self.spin = wx.SpinCtrl(self,value='0',initial=0, size=(-1,-1))
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(sliderlabel,0,wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)

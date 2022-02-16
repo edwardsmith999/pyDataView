@@ -15,10 +15,18 @@ The emphasis of this project is the provision of a simple reader to get data int
 
 ## Quickstart
 
-pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
-Currently, support is provided for field data written by a number of binary format MPI/Fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. To use pyDataView, from the command line, simply point it at directory which contains the data,
+On linux, you need Python3, numpy, wxpython and matplotlib installed. You can then clone the repository and run pyDataView from the command line,
 
-    pyDataView.py -d ./path/to/dir
+     python3 pyDataView.py -d ./path/to/dir 
+     
+Choosing the path to point it at directory which contains the data. 
+     
+If you use Windows, a pre-compiled executable using pyinstaller is available 
+
+Windows download [here](https://e1.pcloud.link/publink/show?code=XZng4FZRzqlM9Xu9m5rjfsHqeWmYYcaWnj7) (Built 23/12/21)
+
+pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
+Currently, support is provided for field data written by a number of binary format MPI/Fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. 
     
 or you can run `pyDataView.py` and choosing the directory.
 Any files which can be converted to fields are displayed on the left hand side.

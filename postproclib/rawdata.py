@@ -146,3 +146,26 @@ class RawData(object):
         sys.exit("read not defined")
 
 
+    def write(self, data, fdir, fname, startrec=0, endrec=None):
+        """
+            Write a 5D array of data in format specified by inhereting objects  
+                data[nx,ny,nz,nrecs,ndata]
+                where nx,ny and nz are number of cells in x,y and z respectivly
+                  nrecs is the number of recs from startrec to endrec and
+                  ndata is the number of datavalue for the current datatype 
+                  (e.g. density has 1, velocity has 3, stress has 9, etc)
+
+            Optional inputs:
+
+                startrec - starting record to write of data array (integer)
+                endrec   - record at which to finish (integer)
+                fdir     - default directory to write data (string)
+                fname    - filename to use (string)
+
+            Return:
+                
+                None                
+        """
+        sys.exit("write not defined")
+
+

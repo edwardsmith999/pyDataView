@@ -7,7 +7,7 @@ class PlotTypePanel(wx.Panel):
 
     def __init__(self,parent,**kwargs):
         wx.Panel.__init__(self,parent,**kwargs)
-        choices = ['Profile','Contour','CPL']
+        choices = ['Profile','Contour','Molecules']
         self.fieldradiobox = wx.RadioBox(self,label='Plot Type',    
                                     style=wx.RA_SPECIFY_COLS,
                                     choices=choices)

@@ -1,6 +1,7 @@
 # -*- encoding: utf-8 -*-
 import wx
 from .plot import PyplotPanel
+from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
@@ -45,6 +46,9 @@ class VisualiserPanel(wx.Panel):
         print(('Trying to initialise visuals with ', item))
         self.fieldname, self.field = item
         self.pyplotp = PyplotPanel(self)
+        self.vispyp = VispyPanel(self)
+        self.vispyp.Hide()
+
         self.choosep = FieldChooserPanel(self)
         self.slidersp = RecordSliderPanel(self)
     
@@ -52,6 +56,8 @@ class VisualiserPanel(wx.Panel):
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(self.choosep, 0, wx.EXPAND | wx.ALL)
         hbox.Add(self.pyplotp, 1, wx.EXPAND | wx.ALL)
+        hbox.Add(self.vispyp, 1, wx.EXPAND | wx.ALL)
+
         vbox.Add(hbox, 1, wx.EXPAND | wx.ALL)
         vbox.Add(self.slidersp, 0, wx.EXPAND | wx.ALL)
         self.SetSizer(vbox)
@@ -142,9 +148,13 @@ class VisualiserPanel(wx.Panel):
                                  lambda event: self.save_dialogue(event, 'script.py'))
 
     def save_dialogue(self, event, defaultFile):
-        dlg = wx.FileDialog(self, defaultDir='./', defaultFile=defaultFile,
-                            wildcard="Python source (*.py)|*.py|MATLAB source (*.m)|*.m" ,
-                            style=wx.FD_SAVE) 
+        if defaultFile == 'script.py':
+            dlg = wx.FileDialog(self, defaultDir='./', defaultFile=defaultFile,
+                                wildcard="Python source (*.py)|*.py|MATLAB source (*.m)|*.m" ,
+                                style=wx.FD_SAVE)
+        else:
+            dlg = wx.FileDialog(self, defaultDir='./', defaultFile=defaultFile,
+                                style=wx.FD_SAVE)
         if (dlg.ShowModal() == wx.ID_OK):
             fpath = dlg.GetPath()
         dlg.Destroy()
@@ -175,27 +185,65 @@ class VisualiserPanel(wx.Panel):
         #print(exc_info, dir(exc_info), type(exc_info))
         #showMessageDlg(exc_info[1])
 
+    def SwitchPanels(self, paneltype):
+
+        if paneltype is "matplotlib":
+            self.pyplotp.Show()
+            self.vispyp.Hide()
+        elif paneltype is "vispy":
+            self.pyplotp.Hide()
+            self.vispyp.Show()
+
+        self.Layout()
+
 
     def handle_plottype(self, event):
         plottype = event.GetString()
         self.plottype = plottype
+        self.savebuttons = [self.choosep.save_d, self.choosep.save_b, self.choosep.save_s]
         if plottype == 'Profile':
+            self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_plot
             self.update = self.update_plot
             self.set_limits = self.set_plot_limits
             self.toggle_binslider("Off")
-            self.toggle_button("On")
+            for b in self.savebuttons:
+                self.toggle_button(b, "On")
+            self.choosep.fieldtype_p.Enable(True)
+            self.choosep.component_p.componentcombobox.Enable(True)
+            self.choosep.component_p.normalcombobox.Enable(True)
+            self.choosep.autoscale_b.Enable(True)
+            self.choosep.minpspin.Enable(True)
+            self.choosep.maxpspin.Enable(True)
         elif plottype == 'Contour':
+            self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_contour
             self.update = self.update_contour
             self.set_limits = self.set_contour_limits
             self.toggle_binslider("On")
-            self.toggle_button("Off")
-        elif plottype == 'CPL':
-            self.redraw = self.redraw_cpl_plot
-            self.update = self.update_cpl_plot
+            for b in self.savebuttons:
+                self.toggle_button(b, "On")
+            self.toggle_button(self.choosep.save_d, "Off")
+            self.choosep.fieldtype_p.Enable(True)
+            self.choosep.component_p.componentcombobox.Enable(True)
+            self.choosep.component_p.normalcombobox.Enable(True)
+            self.choosep.autoscale_b.Enable(True)
+            self.choosep.minpspin.Enable(True)
+            self.choosep.maxpspin.Enable(True)
+        elif plottype == 'Molecules':
+            self.SwitchPanels("vispy")
+            self.redraw = self.redraw_md
+            self.update = self.update_md
             self.toggle_binslider("Off")
-            self.toggle_button("Off")
+            for b in self.savebuttons:
+                self.toggle_button(b, "Off")
+            self.choosep.fieldtype_p.Enable(False)
+            self.choosep.component_p.componentcombobox.Enable(False)
+            self.choosep.component_p.normalcombobox.Enable(False)
+            self.choosep.autoscale_b.Enable(False)
+            self.choosep.minpspin.Enable(False)
+            self.choosep.maxpspin.Enable(False)
+
         #else: 
             #try:
             #    from mayavi import mlab
@@ -456,6 +504,37 @@ class VisualiserPanel(wx.Panel):
     def set_contour_limits(self, lims):
         self.pyplotp.set_contour_limits(lims)
 
+
+    def redraw_md(self):
+#        i = self.rec
+#        n = self.vispyp.n
+#        si = 3*n*(i)
+#        ei = 3*n*(i+1)
+#        print("Loading record ", i)
+#        for ixyz in range(3):
+#            self.vispyp.pos[:,ixyz] = self.vispyp.data[si+n*ixyz:si+n*(ixyz+1)]
+
+        #No point loading current record only as whole file needs to be
+        #read anyway to get it, better to read in constructor
+        #pos = self.vispyp.vmdr.read_pos(self.rec,self.rec+1)
+        if self.vispyp.pos.shape[2] >=  self.rec:
+            self.vispyp.p1.set_data(self.vispyp.pos[:,:,self.rec], face_color=self.vispyp.colours)
+            self.vispyp.canvas.update()
+
+    def update_md(self):
+#        i = self.rec
+#        n = self.vispyp.n
+#        si = 3*n*(i)
+#        ei = 3*n*(i+1)
+#        print("Loading record ", i)
+#        for ixyz in range(3):
+#            self.vispyp.pos[:,ixyz] = self.vispyp.data[si+n*ixyz:si+n*(ixyz+1)]
+
+        if self.vispyp.pos.shape[2] >=  self.rec:
+            self.vispyp.p1.set_data(self.vispyp.pos[:,:,self.rec], face_color=self.vispyp.colours)
+            self.vispyp.canvas.update()
+
+
     def toggle_binslider(self,switchon):
         slider = self.slidersp.binslider
         if (switchon == "On"):
@@ -467,8 +546,8 @@ class VisualiserPanel(wx.Panel):
         else:
             quit("Error - toggle_position_slider must be str On of Off")
 
-    def toggle_button(self, switchon):
-        button = self.choosep.save_d
+    def toggle_button(self, button, switchon):
+        
         if (switchon == "On"):
             button.Enable(True)
         elif(switchon == "Off"):

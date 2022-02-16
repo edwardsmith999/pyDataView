@@ -18,7 +18,7 @@ def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
 class MainFrame(wx.Frame):
 
     def __init__(self, parent=None, fdir='./', title='pyDataViewer', 
-                 size=(800,600), **kwargs):
+                 size=(1200,800), **kwargs):
 
         wx.Frame.__init__(self,parent,title=title,size=size)
         try:

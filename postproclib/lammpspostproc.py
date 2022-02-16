@@ -48,7 +48,7 @@ class LAMMPS_PostProc(PostProc):
                            print(("logfile ", logfile, " appears to be corrupted " + 
                                  "so cannot determine output filename"))
         else:
-            print(("logfile ", logfile, " not found"))
+            #print(("logfile ", logfile, " not found"))
             raise NoResultsInDir
 
         if fname == "":
