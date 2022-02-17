@@ -7,6 +7,7 @@ from .sliders import RecordSliderPanel
 
 from postproclib.pplexceptions import DataNotAvailable
 from postproclib.allpostproc import All_PostProc  
+from postproclib.mdmols import MolAllPostProc  
 from misclib import unicodetolatex, round_to_n
 
 def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
@@ -26,6 +27,7 @@ class VisualiserPanel(wx.Panel):
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
         self.PP = All_PostProc(self.fdir)
+        self.MM = MolAllPostProc(self.fdir)
 
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
@@ -111,6 +113,8 @@ class VisualiserPanel(wx.Panel):
                   self.choosep.plottype_p.fieldradiobox)
         self.Bind(wx.EVT_RADIOBOX, self.handle_fieldtype, 
                   self.choosep.fieldtype_p.fieldradiobox)
+        self.Bind(wx.EVT_RADIOBOX, self.handle_moltype, 
+                  self.choosep.moltype_p.molradiobox)
         self.Bind(wx.EVT_COMBOBOX, self.handle_component, 
                   self.choosep.component_p.componentcombobox)
         self.Bind(wx.EVT_COMBOBOX, self.handle_normal, 
@@ -200,60 +204,46 @@ class VisualiserPanel(wx.Panel):
     def handle_plottype(self, event):
         plottype = event.GetString()
         self.plottype = plottype
-        self.savebuttons = [self.choosep.save_d, self.choosep.save_b, self.choosep.save_s]
+        savebuttons = [self.choosep.save_d, self.choosep.save_b, self.choosep.save_s]
         if plottype == 'Profile':
             self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_plot
             self.update = self.update_plot
             self.set_limits = self.set_plot_limits
             self.toggle_binslider("Off")
-            for b in self.savebuttons:
+            for b in savebuttons:
                 self.toggle_button(b, "On")
-            self.choosep.fieldtype_p.Enable(True)
-            self.choosep.component_p.componentcombobox.Enable(True)
-            self.choosep.component_p.normalcombobox.Enable(True)
-            self.choosep.autoscale_b.Enable(True)
-            self.choosep.minpspin.Enable(True)
-            self.choosep.maxpspin.Enable(True)
+            self.FieldPanelOnOff("On")
+            self.choosep.moltype_p.Hide()
+            self.choosep.fieldtype_p.Show()
         elif plottype == 'Contour':
             self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_contour
             self.update = self.update_contour
             self.set_limits = self.set_contour_limits
             self.toggle_binslider("On")
-            for b in self.savebuttons:
+            for b in savebuttons:
                 self.toggle_button(b, "On")
             self.toggle_button(self.choosep.save_d, "Off")
-            self.choosep.fieldtype_p.Enable(True)
-            self.choosep.component_p.componentcombobox.Enable(True)
-            self.choosep.component_p.normalcombobox.Enable(True)
-            self.choosep.autoscale_b.Enable(True)
-            self.choosep.minpspin.Enable(True)
-            self.choosep.maxpspin.Enable(True)
+            self.FieldPanelOnOff("On")
+            self.choosep.moltype_p.Hide()
+            self.choosep.fieldtype_p.Show()
         elif plottype == 'Molecules':
             self.SwitchPanels("vispy")
             self.redraw = self.redraw_md
             self.update = self.update_md
             self.toggle_binslider("Off")
-            for b in self.savebuttons:
+            for b in savebuttons:
                 self.toggle_button(b, "Off")
-            self.choosep.fieldtype_p.Enable(False)
-            self.choosep.component_p.componentcombobox.Enable(False)
-            self.choosep.component_p.normalcombobox.Enable(False)
-            self.choosep.autoscale_b.Enable(False)
-            self.choosep.minpspin.Enable(False)
-            self.choosep.maxpspin.Enable(False)
+            self.FieldPanelOnOff("Off")
+            self.choosep.fieldtype_p.Hide()
+            self.choosep.moltype_p.Show()
 
-        #else: 
-            #try:
-            #    from mayavi import mlab
-            #except ImportError:
-            #    self.showMessageDlg("3D plotting requires mayavi to be installed",
-            #                        "Information", wx.OK|wx.ICON_INFORMATION)
         else:
             quit("Error in plotype specified")
 
         self.redraw()
+       
 
     def handle_fieldtype(self, event):
         ftype = unicodetolatex(event.GetString())
@@ -274,6 +264,21 @@ class VisualiserPanel(wx.Panel):
         if (self.bin > self.maxbin):
             self.SetBin(self.maxbin)
 
+        self.redraw()
+
+    def handle_moltype(self, event):
+
+        mtype = event.GetString()
+        if (self.mol == self.MM.plotlist[mtype]):
+            pass
+        else:
+            self.mol = self.MM.plotlist[mtype]
+            self.molname = mtype
+
+        self.maxrec = self.mol.maxrec
+        self.slidersp.recslider.slider.SetMax(self.maxrec)
+        if (self.rec > self.maxrec):
+            self.SetRecord(self.maxrec)
         self.redraw()
 
     def update_components(self):
@@ -506,13 +511,6 @@ class VisualiserPanel(wx.Panel):
 
 
     def redraw_md(self):
-#        i = self.rec
-#        n = self.vispyp.n
-#        si = 3*n*(i)
-#        ei = 3*n*(i+1)
-#        print("Loading record ", i)
-#        for ixyz in range(3):
-#            self.vispyp.pos[:,ixyz] = self.vispyp.data[si+n*ixyz:si+n*(ixyz+1)]
 
         #No point loading current record only as whole file needs to be
         #read anyway to get it, better to read in constructor
@@ -522,18 +520,29 @@ class VisualiserPanel(wx.Panel):
             self.vispyp.canvas.update()
 
     def update_md(self):
-#        i = self.rec
-#        n = self.vispyp.n
-#        si = 3*n*(i)
-#        ei = 3*n*(i+1)
-#        print("Loading record ", i)
-#        for ixyz in range(3):
-#            self.vispyp.pos[:,ixyz] = self.vispyp.data[si+n*ixyz:si+n*(ixyz+1)]
 
+        #This should call
         if self.vispyp.pos.shape[2] >=  self.rec:
             self.vispyp.p1.set_data(self.vispyp.pos[:,:,self.rec], face_color=self.vispyp.colours)
             self.vispyp.canvas.update()
 
+    def FieldPanelOnOff(self, switchon):
+        if (switchon == "On"):
+            self.choosep.fieldtype_p.Enable(True)
+            self.choosep.component_p.componentcombobox.Enable(True)
+            self.choosep.component_p.normalcombobox.Enable(True)
+            self.choosep.autoscale_b.Enable(True)
+            self.choosep.minpspin.Enable(True)
+            self.choosep.maxpspin.Enable(True)
+        elif(switchon == "Off"):
+            self.choosep.fieldtype_p.Enable(False)
+            self.choosep.component_p.componentcombobox.Enable(False)
+            self.choosep.component_p.normalcombobox.Enable(False)
+            self.choosep.autoscale_b.Enable(False)
+            self.choosep.minpspin.Enable(False)
+            self.choosep.maxpspin.Enable(False)
+        else:
+            quit("Error - FieldPanelOnOff must be str On of Off")
 
     def toggle_binslider(self,switchon):
         slider = self.slidersp.binslider

@@ -249,13 +249,19 @@ try:
 
     class VMDReader:
 
-        def __init__(self, fdir):
+        def __init__(self, fdir, fname="newest"):
 
             self.fdir = fdir
             self.n = self.read_header()
-            self.fname = self.check_files()
-            #self.pos = self.read_pos(0, self.steps)
-            #self.colours = self.read_colours()
+            #Either take whichever file has been created most recently
+            if fname is "newest":
+                self.fname = self.check_files()
+            elif "vmd_temp" in fname:
+                self.fname = self.check_files(ftmp="vmd_temp.dcd", fout="")
+            elif "vmd_out" in fname:
+                self.fname = self.check_files(fout="vmd_out.dcd", ftmp="")
+            else:
+                raise IOError("fname", fname, " is not recognised in VMDReader") 
 
         def read_header(self, headername="/simulation_header"):
 
@@ -284,19 +290,16 @@ try:
 
             #Get size of file
             if (self.use_temp):
-                filesize = os.path.getsize(ftmp)
                 fname = ftmp
-                self.mol_data = True
             elif (os.path.exists(fout)):
-                filesize = os.path.getsize(fout)
                 fname = fout
-                self.mol_data = True
             else:
-                self.mol_data = False
+                self.data_found = False
                 self.steps = 0
                 return None
 
-             #4 byte single records
+            self.data_found = True
+            filesize = os.path.getsize(fname)
             self.steps = int(np.floor(filesize/(3.*self.n*dsize)))
 
             return fname
@@ -307,7 +310,7 @@ try:
                 print("WARNING - NON ZERO START IN READ POS NOT FULLY TESTED")
 
             steps = end-start
-            if (self.mol_data):
+            if (self.data_found):
                 pos = np.zeros([self.n, 3, steps])
             else:
                 print("NO DATA FOUND")
@@ -462,7 +465,11 @@ try:
             self.SetAutoLayout(True)
             self.SetSizer(box)
 
-            # # build your visuals, that's all
+            self.CreatePlot()
+
+        def CreatePlot(self, rec=0):
+
+            # # build visuals
             Scatter3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
             # #Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
 
@@ -476,7 +483,7 @@ try:
             #self.p1 = Plot3D(parent=view.scene)
             self.p1 = Scatter3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
-            self.p1.set_data(self.pos[:,:,0], face_color=self.colours)#, edge_width=0.5, size=10)#, symbol='o',
+            self.p1.set_data(self.pos[:,:,rec], face_color=self.colours)#, edge_width=0.5, size=10)#, symbol='o',
                         #edge_width=0.5)#, edge_color='blue')
             view.camera.set_range()
             self.canvas.show()
