@@ -8,11 +8,11 @@ class PlotTypePanel(wx.Panel):
     def __init__(self,parent,**kwargs):
         wx.Panel.__init__(self,parent,**kwargs)
         choices = ['Profile','Contour','Molecules']
-        self.fieldradiobox = wx.RadioBox(self,label='Plot Type',    
+        self.radiobox = wx.RadioBox(self,label='Plot Type',    
                                     style=wx.RA_SPECIFY_COLS,
                                     choices=choices)
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.fieldradiobox, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(self.radiobox, 0, wx.EXPAND|wx.ALL, 10)
         self.SetSizer(vbox)
 
 class FieldTypePanel(scrolled.ScrolledPanel):
@@ -114,6 +114,7 @@ class FieldChooserPanel(wx.Panel):
         # Field type chooser box
         self.fieldtype_p = FieldTypePanel(self, size = (-1, 340))
         self.moltype_p = MolTypePanel(self, size = (-1, 340))
+        self.moltype_p.Hide()
         # Component chooser combo box
         self.component_p = FieldComponentPanel(self)
         # Autoscale button

@@ -1,5 +1,7 @@
 # -*- encoding: utf-8 -*-
 import wx
+import wx.lib.newevent
+
 from .plot import PyplotPanel
 from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
@@ -32,6 +34,7 @@ class VisualiserPanel(wx.Panel):
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
         # while DataNotAvailable error is returned for some complex classes
+        fieldfound = False
         for item in list(self.PP.plotlist.items()):
             try:
                 #Skip example case as we end up with wrong binlimits
@@ -40,9 +43,27 @@ class VisualiserPanel(wx.Panel):
                 self.initialise_visuals(item)
                 #If successful, use the current object
                 # if not then keep trying
+                fieldfound=True
                 break
             except DataNotAvailable as ValueError:
                 pass
+
+        # Loop through all molecular classes and try to initialise at least one.
+        for item in list(self.MM.plotlist.items()):
+            try:
+                self.molname, self.mol = item
+                #If no fields but MD data availabe, switch to this
+                if (not fieldfound):
+                    #Use Example field as others don't exist
+                    exampleitem = list(self.PP.plotlist.items())[0]
+                    self.initialise_visuals(exampleitem)
+                    self.handle_plottype(wx.lib.newevent.NewEvent(),
+                                         overide_event_str="Molecules")
+                break
+            except DataNotAvailable as ValueError:
+                pass
+
+
 
     def initialise_visuals(self,item):
         print(('Trying to initialise visuals with ', item))
@@ -95,8 +116,6 @@ class VisualiserPanel(wx.Panel):
         self.toggle_binslider("Off")
         self.redraw()
 
-        #Attempt to create a custom event to set initial value
-        #import wx.lib.newevent
         #SomeNewEvent, EVT_SOME_NEW_EVENT = wx.lib.newevent.NewEvent()
         #evt = SomeNewEvent(GetString=lambda : unicode(self.fieldname))
         #self.handle_fieldtype(evt)
@@ -105,12 +124,15 @@ class VisualiserPanel(wx.Panel):
         for i, k in enumerate(sorted(self.PP.plotlist.keys())):
             if k == self.fieldname:    
                 self.choosep.fieldtype_p.fieldradiobox.SetSelection(i)
+                #SetSelection does not cause handle_fieldtype event
+                self.handle_fieldtype(wx.lib.newevent.NewEvent(),
+                                      overide_event_str=self.fieldname)
                 break
 
     def set_bindings(self):
 
         self.Bind(wx.EVT_RADIOBOX, self.handle_plottype, 
-                  self.choosep.plottype_p.fieldradiobox)
+                  self.choosep.plottype_p.radiobox)
         self.Bind(wx.EVT_RADIOBOX, self.handle_fieldtype, 
                   self.choosep.fieldtype_p.fieldradiobox)
         self.Bind(wx.EVT_RADIOBOX, self.handle_moltype, 
@@ -201,8 +223,12 @@ class VisualiserPanel(wx.Panel):
         self.Layout()
 
 
-    def handle_plottype(self, event):
-        plottype = event.GetString()
+    def handle_plottype(self, event, overide_event_str=False):
+        if not overide_event_str:
+            plottype = event.GetString()
+        else:
+            plottype=overide_event_str
+
         self.plottype = plottype
         savebuttons = [self.choosep.save_d, self.choosep.save_b, self.choosep.save_s]
         if plottype == 'Profile':
@@ -239,14 +265,29 @@ class VisualiserPanel(wx.Panel):
             self.choosep.fieldtype_p.Hide()
             self.choosep.moltype_p.Show()
 
+            #Set default mol in radiobox
+            for i, k in enumerate(sorted(self.MM.plotlist.keys())):
+                if k == self.molname:    
+                    self.choosep.moltype_p.molradiobox.SetSelection(i)
+                    #SetSelection does not cause handle_moltype event
+                    self.handle_moltype(wx.lib.newevent.NewEvent(),
+                                        overide_event_str=self.molname)
+                    break
+
         else:
             quit("Error in plotype specified")
 
+        self.Layout()
         self.redraw()
        
 
-    def handle_fieldtype(self, event):
-        ftype = unicodetolatex(event.GetString())
+    def handle_fieldtype(self, event, overide_event_str=False):
+
+        if not overide_event_str:
+            ftype = unicodetolatex(event.GetString())
+        else:
+            ftype = overide_event_str
+        
         if (self.field == self.PP.plotlist[ftype]):
             pass
         else:
@@ -266,9 +307,13 @@ class VisualiserPanel(wx.Panel):
 
         self.redraw()
 
-    def handle_moltype(self, event):
+    def handle_moltype(self, event, overide_event_str=False):
 
-        mtype = event.GetString()
+        if not overide_event_str:
+            mtype = event.GetString()
+        else:
+            mtype = overide_event_str
+
         if (self.mol == self.MM.plotlist[mtype]):
             pass
         else:
@@ -277,8 +322,11 @@ class VisualiserPanel(wx.Panel):
 
         self.maxrec = self.mol.maxrec
         self.slidersp.recslider.slider.SetMax(self.maxrec)
+        #Setting autoscale forces a redraw in SetRecord
+        self.autoscale = True
         if (self.rec > self.maxrec):
             self.SetRecord(self.maxrec)
+        self.autoscale = False
         self.redraw()
 
     def update_components(self):
@@ -509,22 +557,23 @@ class VisualiserPanel(wx.Panel):
     def set_contour_limits(self, lims):
         self.pyplotp.set_contour_limits(lims)
 
-
     def redraw_md(self):
-
         #No point loading current record only as whole file needs to be
         #read anyway to get it, better to read in constructor
         #pos = self.vispyp.vmdr.read_pos(self.rec,self.rec+1)
-        if self.vispyp.pos.shape[2] >=  self.rec:
-            self.vispyp.p1.set_data(self.vispyp.pos[:,:,self.rec], face_color=self.vispyp.colours)
-            self.vispyp.canvas.update()
+
+        #Redraw creates canvas
+        self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
+        self.mol.colours = self.vispyp.get_vispy_colours(self.mol)   
+        if (not self.vispyp.plotexists): 
+            self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours)
+        else:
+            self.update_md()
 
     def update_md(self):
 
-        #This should call
-        if self.vispyp.pos.shape[2] >=  self.rec:
-            self.vispyp.p1.set_data(self.vispyp.pos[:,:,self.rec], face_color=self.vispyp.colours)
-            self.vispyp.canvas.update()
+        if self.mol.pos.shape[2] >=  self.rec:
+            self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours)
 
     def FieldPanelOnOff(self, switchon):
         if (switchon == "On"):

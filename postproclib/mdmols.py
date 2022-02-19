@@ -66,7 +66,7 @@ class VMDReader:
 
         self.data_found = True
         filesize = os.path.getsize(fname)
-        self.maxrec = int(np.floor(filesize/(3.*self.n*dsize)))
+        self.maxrec = int(np.floor(filesize/(3.*self.n*dsize)))-1
 
         return fname
 
@@ -75,7 +75,7 @@ class VMDReader:
         if start != 0:
             print("WARNING - NON ZERO START IN READ POS NOT FULLY TESTED")
 
-        steps = end-start
+        steps = end-start+1
         if (self.data_found):
             pos = np.zeros([self.n, 3, steps])
         else:
@@ -94,7 +94,7 @@ class VMDReader:
             data = np.fromfile(self.fname, dtype=np.single, offset=offset)
 
             cntrec = 0
-            for rec in range(start, end):
+            for rec in range(start, end+1):
                 si = 3*self.n*(rec-start)
                 ei = 3*self.n*(rec-start+1)
                 print("Loading record ", rec)
@@ -121,7 +121,7 @@ class VMDReader:
 
                 #Then read data
                 cntrec = 0; datacorrupt = False
-                for rec in range(start, end):
+                for rec in range(start, end+1):
                     for ixyz in range(3):
                         #Corrupted data beyond a point causes TypeError
                         #so best to exit
@@ -179,14 +179,16 @@ class VMDReader:
       
                     moltype.append(l.split()[1])
 
-        return moltype
+            return moltype
+        else:
+            return None
 
 class final_state:
 
     def __init__(self, fname= "./final_state", tether_tags = [3,5,6,7,10], verbose=False):
         self.fname = fname
         self.tether_tags = tether_tags
-        self.maxrec = 1 #Final state file is a single record
+        self.maxrec = 0 #Final state file is a single record
 
         #Get filesize and read headersize
         self.size = os.path.getsize(fname)
@@ -241,12 +243,19 @@ class final_state:
 
         #Allocate arrays
         h = self.headerDict
+        returnDict = {}
         N = h["globalnp"]#self.N
+        self.n = N
         self.tag = np.zeros(N)
         self.r = np.zeros([N,3])
         self.v = np.zeros([N,3])
         self.rtether = np.zeros([N,3])
         self.Ntethered = 0
+
+        returnDict["tag"] = self.tag
+        returnDict["r"] = self.r
+        returnDict["v"] = self.v
+        returnDict["rtether"] = self.rtether
 
         #Create arrays for molecular removal
         self.Nnew = N
@@ -255,12 +264,16 @@ class final_state:
 
         if (h["rtrue_flag"]):
             self.rtrue = np.zeros([N,3])
+            returnDict["rtrue"] = self.rtrue
         if (h["mie_potential"]):
             self.moltype = np.zeros(N)
+            returnDict["moltype"] = self.moltype
         if (h["global_numbering"]):
             self.globnum = np.zeros(N)
+            returnDict["globnum"] = self.globnum
         if (h["potential_flag"]):
             self.potdata = np.zeros([N,8])
+            returnDict["potdata"] = self.potdata
 
         i = 0
         for n in range(N):
@@ -279,13 +292,14 @@ class final_state:
                 self.globnum[n] = data[i]; i += 1
             if (h["potential_flag"]):
                 self.potdata[n,:] = data[i:i+8]; i += 8
-
-        return self.tag, self.r, self.v
+        
+        return returnDict
 
 
     def read_pos(self, start, end):
 
-        t, r, v = read_moldata()
+        returnDict = self.read_moldata()
+        r = returnDict["r"]
         pos = np.zeros([r.shape[0],r.shape[1],1])
         pos[:,:,0] = r
         return pos
@@ -416,7 +430,7 @@ class XYZReader:
 
 class MolAllPostProc(PostProc):
 
-    def __init__(self,resultsdir,**kwargs):
+    def __init__(self, resultsdir, **kwargs):
         self.resultsdir = resultsdir
         self.plotlist = {} #collections.OrderedDict
         self.error = {}
@@ -498,7 +512,9 @@ if __name__ == "__main__":
     fs = molall.plotlist["final_state"]#final_state(fdir+"./final_state", verbose=True)
 
     #read the data
-    tag, r, v = fs.read_moldata()
+    D = fs.read_moldata()
+    r = D["r"]
+    tag = D["tag"]
     #Plot it
     ax[0].scatter(r[:,0], r[:,1], r[:,2], c=tag[:])
     

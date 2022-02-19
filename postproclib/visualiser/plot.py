@@ -243,235 +243,38 @@ class PyplotPanel(wx.Panel):
 
 try:
     from vispy import visuals, scene
-    from vispy.color import Colormap
-    from scipy.io import FortranFile
-
-
-    class VMDReader:
-
-        def __init__(self, fdir, fname="newest"):
-
-            self.fdir = fdir
-            self.n = self.read_header()
-            #Either take whichever file has been created most recently
-            if fname is "newest":
-                self.fname = self.check_files()
-            elif "vmd_temp" in fname:
-                self.fname = self.check_files(ftmp="vmd_temp.dcd", fout="")
-            elif "vmd_out" in fname:
-                self.fname = self.check_files(fout="vmd_out.dcd", ftmp="")
-            else:
-                raise IOError("fname", fname, " is not recognised in VMDReader") 
-
-        def read_header(self, headername="/simulation_header"):
-
-            #Load number of molecules data
-            fname = self.fdir + headername
-            with open(fname,"r") as f:
-                for l in f:
-                    if "globalnp" in l:
-                        n = int(l.split(";")[2])
-                        break
-
-            return n
-
-        def check_files(self, dsize=4, ftmp="vmd_temp.dcd", fout="vmd_out.dcd"):
-
-            #Check which MD files are available
-            ftmp = self.fdir + "/" + ftmp#"/vmd_temp.dcd"
-            fout = self.fdir + "/" + fout#"/vmd_out.dcd"
-            #If both, check if temp is newer
-            self.use_temp=False
-            if (os.path.exists(ftmp) and os.path.exists(fout)):
-                if (os.path.getmtime(ftmp) > os.path.getmtime(fout)):
-                    self.use_temp=True
-            elif (os.path.exists(ftmp)):
-                self.use_temp=True
-
-            #Get size of file
-            if (self.use_temp):
-                fname = ftmp
-            elif (os.path.exists(fout)):
-                fname = fout
-            else:
-                self.data_found = False
-                self.steps = 0
-                return None
-
-            self.data_found = True
-            filesize = os.path.getsize(fname)
-            self.steps = int(np.floor(filesize/(3.*self.n*dsize)))
-
-            return fname
-
-        def read_pos(self, start, end):
-
-            if start != 0:
-                print("WARNING - NON ZERO START IN READ POS NOT FULLY TESTED")
-
-            steps = end-start
-            if (self.data_found):
-                pos = np.zeros([self.n, 3, steps])
-            else:
-                print("NO DATA FOUND")
-                return np.zeros([self.n,3, 1])
-
-            #Tries to load record rec from vmd_temp.dcd or vmd_out.dcd
-            #Numpy fromfile does not work on final dcd as insists on using Fortran 
-            #unformatted which is an archaic binary format incompatible
-            #with stream, etc. Need to keep like this so VMD still works
-            #Load data
-            read_success = False
-            if (self.use_temp):
-                offset = 3 * start * self.n
-                print("Loading MD data from " + self.fname, " at offset ", offset)
-                data = np.fromfile(self.fname, dtype=np.single, offset=offset)
-
-                cntrec = 0
-                for rec in range(start, end):
-                    si = 3*self.n*(rec-start)
-                    ei = 3*self.n*(rec-start+1)
-                    print("Loading record ", rec)
-                    for ixyz in range(3):
-                        pos[:,ixyz,cntrec] = data[si+self.n*ixyz:si+self.n*(ixyz+1)]
-                    cntrec += 1
-                read_success = True
-
-            elif (os.path.exists(self.fname)):
-                print("Loading MD data from " + self.fname)
-                with FortranFile(self.fname, 'r') as f:
-                    h1 = f.read_record('i4')
-                    h2 = f.read_record('i4')
-                    Nb = f.read_record('i4')
-                    if (Nb[0] != self.n):
-                        raise IOError(self.fname + " is not in expected format")
-
-                    #No Seek offered so read and discard up to start
-#                    if (start != 0):
-#                        for rec in range(start):
-#                            pos[:,0,0] = f.read_record('f4')
-#                            pos[:,1,0] = f.read_record('f4')
-#                            pos[:,2,0] = f.read_record('f4')
-
-                    #Then read data
-                    cntrec = 0; datacorrupt = False
-                    for rec in range(start, end):
-                        for ixyz in range(3):
-                            #Corrupted data beyond a point causes TypeError
-                            #so best to exit
-                            try:
-                                data = f.read_record('f4')
-                                #Check n to handle case where 
-                                #extra record between timesteps
-                                if data.size == self.n:
-                                    pos[:,ixyz,cntrec] = data
-                                else:
-                                    print(rec, "Extra record of size = ", data.size, " with N mols = ", self.n)
-                                    pos[:,ixyz,cntrec] = f.read_record('f4')
-                            except TypeError as e:
-                                print("Corruped data at record=", rec, " in " 
-                                      + self.fname, " Error is ", e)
-                                datacorrupt = True
-                        if datacorrupt:
-                            break
-                        cntrec += 1
-
-                read_success = True
-
-            if (not read_success):
-                raise IOError("Failed to read data from" + self.fname)
-
-            return pos
-
-
-
-        def read_colours(self, fname="vmd_out.psf"):
-                       
-            #Load tag data (assumes same ordering)
-            #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
-            #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}     
-            cm = Colormap(['r', 'g', 'b'])
-            colours = np.ones([self.n, 4])
-            typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.]}
-
-            fpsf = self.fdir + "/" +  fname
-            if (os.path.exists(fpsf)):
-                with open(fpsf) as f:
-                    rd = True
-                    for l in f:
-                        if (rd and "!NATOM" in l):
-                            N = int(l.replace("!NATOM",""))
-                            rd = False
-                            continue
-                        elif (rd):
-                            continue                   
-                        try:
-                            molno = int(l.split()[0])-1
-                        except IndexError:
-                            print("Line not molecules in ", fname, " skipping")
-                            continue    
-          
-                        tag = l.split()[1]
-                        #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
-                        #Convert tag name to colour
-                        try:
-                            colours[molno,:] = typeDict[tag]
-                        except KeyError:
-                            colours[molno,0:3] = cm[float(hash(tag) % 256) / 256].rgb[0]
-                        except IndexError:
-                            print(self.n, N, l)
-                        if (molno == N-1):
-                            break
-
-            return colours
-
-    #def get_vmd_data(fdir):
-
-
-
-                #maxheadersize =100 #260
-
-#                with open(fout, 'rb') as f:
-#                    #print(f.read(headersize))
-#                    #f.seek(headersize,os.SEEK_SET)
-#                    for i in range(maxheadersize):
-#                        Nb = f.read(4)
-#                        print(i, Nb, int.from_bytes(Nb, byteorder="little"))
-#                        if (int.from_bytes(Nb, byteorder="little") == self.n):
-#                            break
-#                    self.data = np.fromfile(f, dtype=np.single)
-
-
-        #return n, steps, pos, colours
-
+    from postproclib.mdmols import VMDReader  
 
     class VispyPanel(wx.Panel):
         def __init__(self, parent, catch_noresults=True):
             super(VispyPanel, self).__init__(parent)
             self.parent = parent
             self.fdir = parent.fdir
+            self.plotexists = False
 
-            #Load data from VMD object
-            self.vmdr = VMDReader(self.fdir)
-            self.n = self.vmdr.n
-            self.steps = self.vmdr.steps
-            self.pos = self.vmdr.read_pos(0, self.steps)
-            self.colours = self.vmdr.read_colours()    
+            self.cmap = matplotlib.cm.RdYlBu_r
 
-            box = wx.BoxSizer(wx.VERTICAL)
             self.canvas = scene.SceneCanvas(app="wx", keys='interactive', size=(800,500), 
                                             dpi=200, bgcolor='w', parent=self)
+
+            self.radiobox = wx.RadioBox(self,label='Colours',    
+                                        style=wx.RA_SPECIFY_COLS,
+                                        choices=["velocity","moltype","tags"])
+            box = wx.BoxSizer(wx.VERTICAL)
             box.Add(self.canvas.native, 1, wx.EXPAND | wx.ALL)
+            box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
             self.SetAutoLayout(True)
             self.SetSizer(box)
 
-            self.CreatePlot()
+            #self.CreatePlot(self.pos[:,:,0], self.colours)
 
-        def CreatePlot(self, rec=0):
 
-            # # build visuals
+        def CreatePlot(self, data, cdata):
+
+            # build visuals
+            # Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
             Scatter3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
-            # #Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
+
 
             # Add a ViewBox to let the user zoom/rotate
             view = self.canvas.central_widget.add_view()
@@ -479,14 +282,55 @@ try:
             view.camera.azimuth = 360.
             view.camera.elevation = 90.
 
-            # plot ! note the parent parameter
-            #self.p1 = Plot3D(parent=view.scene)
+            # plot
+            # self.p1 = Plot3D(parent=view.scene)
             self.p1 = Scatter3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
-            self.p1.set_data(self.pos[:,:,rec], face_color=self.colours)#, edge_width=0.5, size=10)#, symbol='o',
-                        #edge_width=0.5)#, edge_color='blue')
+            self.p1.set_data(data, face_color=cdata)
             view.camera.set_range()
             self.canvas.show()
+
+            self.plotexists = True
+
+
+        def set_data(self, data, cdata):
+            #size=10, symbol='o', edge_width=0.5, edge_color='blue'
+            self.p1.set_data(data, face_color=cdata)
+            self.canvas.update()
+
+        def get_vispy_colours(self, vmdr):
+
+            colours = np.ones([vmdr.n, 4])
+            try:
+                moltypes = vmdr.read_moltype() 
+                if moltypes == None:
+                    return colours
+                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.]}
+                molno = 0
+                for moltype in moltypes:
+                    #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
+                    #Convert tag name to colour
+                    try:
+                        colours[molno,:] = typeDict[moltype]
+                    except KeyError:
+                        colours[molno,0:3] = self.cmap(float(hash(moltype) % 256) / 256)
+                    except IndexError:
+                        print(vmdr.n, l)
+                    if (molno == vmdr.n-1):
+                        break
+                    molno += 1
+
+            except AttributeError:
+                #Load tag data (assumes same ordering)
+                #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
+                #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
+                D = vmdr.read_moldata()
+                tags = D["tag"]
+                colours = np.ones([vmdr.n, 4])
+                colours[:,:] = self.cmap(tags/tags.max())
+
+            return colours
+
 
 except ImportError:
 
