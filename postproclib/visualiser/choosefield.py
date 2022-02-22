@@ -8,11 +8,11 @@ class PlotTypePanel(wx.Panel):
     def __init__(self,parent,**kwargs):
         wx.Panel.__init__(self,parent,**kwargs)
         choices = ['Profile','Contour','Molecules']
-        self.fieldradiobox = wx.RadioBox(self,label='Plot Type',    
+        self.radiobox = wx.RadioBox(self,label='Plot Type',    
                                     style=wx.RA_SPECIFY_COLS,
                                     choices=choices)
         vbox = wx.BoxSizer(wx.VERTICAL)
-        vbox.Add(self.fieldradiobox, 0, wx.EXPAND|wx.ALL, 10)
+        vbox.Add(self.radiobox, 0, wx.EXPAND|wx.ALL, 10)
         self.SetSizer(vbox)
 
 class FieldTypePanel(scrolled.ScrolledPanel):
@@ -36,11 +36,31 @@ class FieldTypePanel(scrolled.ScrolledPanel):
     def on_focus(self,event):
         pass
 
+class MolTypePanel(scrolled.ScrolledPanel):
+
+    def __init__(self,parent,**kwargs):
+        scrolled.ScrolledPanel.__init__(self, parent,**kwargs)
+
+        #This will be moved to a top level MD data collector
+        #import glob
+        #choices = "final_state" + glob.glob("*.dcd") + glob.glob("*.xyz")
+        #choices = ["final_state", "all_clusters.xyz", "vmd_out.dcd", "vmd_temp.dcd"]
+        choices = sorted(parent.parent.MM.plotlist.keys())
+        self.molradiobox = wx.RadioBox(self,label='Molecule Files',    
+                                    style=wx.RA_SPECIFY_ROWS,
+                                    choices=choices)
+        vbox = wx.BoxSizer(wx.VERTICAL)
+        vbox.Add(self.molradiobox, 0, wx.EXPAND|wx.ALL, 10)
+        self.SetSizer(vbox)
+        self.SetAutoLayout(1)
+        self.SetupScrolling(scroll_x=False, scrollToTop=False)
+
         #Fix to prevent jump to top when select
         self.Bind(wx.EVT_CHILD_FOCUS, self.on_focus)
 
     def on_focus(self,event):
         pass
+
 
 class SaveFigurePanel(wx.Panel):
 
@@ -83,6 +103,7 @@ class FieldComponentPanel(wx.Panel):
         grid.AddGrowableCol(1)
         self.SetSizer(grid)
 
+
 class FieldChooserPanel(wx.Panel):
     
     def __init__(self, parent, **kwargs):
@@ -92,7 +113,8 @@ class FieldChooserPanel(wx.Panel):
         self.plottype_p = PlotTypePanel(self)    
         # Field type chooser box
         self.fieldtype_p = FieldTypePanel(self, size = (-1, 340))
-        #self.fieldtype_p.SetupScrolling(scrollToTop=False)
+        self.moltype_p = MolTypePanel(self, size = (-1, 340))
+        self.moltype_p.Hide()
         # Component chooser combo box
         self.component_p = FieldComponentPanel(self)
         # Autoscale button
@@ -109,6 +131,7 @@ class FieldChooserPanel(wx.Panel):
         vbox = wx.BoxSizer(wx.VERTICAL)
         vbox.Add(self.plottype_p, 0,wx.EXPAND, 0)
         vbox.Add(self.fieldtype_p,0,wx.EXPAND, 0)
+        vbox.Add(self.moltype_p,0,wx.EXPAND, 0)
         vbox.Add(self.component_p,0,wx.EXPAND, 0)
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         vbox.Add(hbox,0,wx.EXPAND, 0)
