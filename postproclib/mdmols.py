@@ -438,6 +438,44 @@ class XYZReader:
         raise RuntimeError("XYZReader not yet developed")
 
 
+
+
+def read_grid(rec, filename="./results/surface.grid", ny=64, nz=64):
+    data = np.fromfile(filename, dtype=np.float64)
+    N = ny*nz
+    Nrecs = int(data.shape[0]/N)
+    r = data.reshape([Nrecs,ny,nz])
+
+    #First two records are positions in y and z
+    rec_ = rec+3
+
+    # plot ! note the parent parameter
+    x = []; y = []; z = []
+    for i in range(nz):
+        if (i%2 == 0):
+            d = -1
+        else:
+            d = 1
+        x.append(r[rec_,::d,i])
+        y.append(r[0,::d,i])
+        z.append(r[1,::d,i])
+
+    for j in range(ny):
+        if (j%2 == 0):
+            d = -1
+        else:
+            d = 1
+        x.append(r[rec_,j,::d])
+        y.append(r[0,j,::d])
+        z.append(r[1,j,::d,])
+
+    x = np.array(x)#.ravel()
+    y = np.array(y)#.ravel()
+    z = np.array(z)#.ravel()
+
+    return x, y, z
+
+
 class MolAllPostProc(PostProc):
 
     def __init__(self, resultsdir, **kwargs):
