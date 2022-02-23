@@ -7,9 +7,10 @@ from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
-from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
+from postproclib.pplexceptions import DataNotAvailable
 from postproclib.allpostproc import All_PostProc  
-from postproclib.mdmols import MolAllPostProc  
+from postproclib.headerdata import MDHeaderData
+from postproclib.mdmols import MolAllPostProc, read_grid
 from postproclib import PostProc  
 from misclib import unicodetolatex, round_to_n
 
@@ -29,6 +30,7 @@ class VisualiserPanel(wx.Panel):
 
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
+        self.header = MDHeaderData(self.fdir)
         try:
             self.PP = All_PostProc(self.fdir)
             fieldfound = True
@@ -42,7 +44,7 @@ class VisualiserPanel(wx.Panel):
             self.MM.plotlist = {"Empty":[]}
             if not fieldfound:
                 raise
-
+        self.gridfile = self.fdir+"/surface.grid"
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
         # while DataNotAvailable error is returned for some complex classes
@@ -577,15 +579,28 @@ class VisualiserPanel(wx.Panel):
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
         self.mol.colours = self.vispyp.get_vispy_colours(self.mol)   
+
+        if (os.path.exists(self.gridfile)):
+            x,y,z = read_grid(self.rec, filename=self.gridfile, 
+                              ny=int(self.header.nbins2), nz=int(self.header.nbins3))
+            griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
+        else:
+            griddata = False
         if (not self.vispyp.plotexists): 
-            self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours)
+            self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours, griddata)
         else:
             self.update_md()
 
     def update_md(self):
 
         if self.mol.pos.shape[2] >=  self.rec:
-            self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours)
+            if (os.path.exists(self.gridfile)):
+                x,y,z = read_grid(self.rec, filename=self.gridfile, 
+                                ny=int(self.header.nbins2), nz=int(self.header.nbins3))
+                griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
+                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, griddata)
+            else:
+                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours)
 
     def FieldPanelOnOff(self, switchon):
         if (switchon == "On"):

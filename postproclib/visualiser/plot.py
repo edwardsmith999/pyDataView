@@ -243,7 +243,7 @@ class PyplotPanel(wx.Panel):
 
 try:
     from vispy import visuals, scene
-    from postproclib.mdmols import VMDReader  
+    from postproclib.mdmols import VMDReader
 
     class VispyPanel(wx.Panel):
         def __init__(self, parent, catch_noresults=True):
@@ -269,12 +269,11 @@ try:
             #self.CreatePlot(self.pos[:,:,0], self.colours)
 
 
-        def CreatePlot(self, data, cdata):
+        def CreatePlot(self, data, cdata, griddata=False):
 
             # build visuals
-            # Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
             Scatter3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
-
+            Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
 
             # Add a ViewBox to let the user zoom/rotate
             view = self.canvas.central_widget.add_view()
@@ -282,20 +281,29 @@ try:
             view.camera.azimuth = 360.
             view.camera.elevation = 90.
 
-            # plot
-            # self.p1 = Plot3D(parent=view.scene)
+            # Scatter
             self.p1 = Scatter3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
             self.p1.set_data(data, face_color=cdata)
+
+            #GRID
+            if isinstance(griddata, np.ndarray):
+                self.p2 = Plot3D(parent=view.scene, marker_size=0.)
+                self.p2.set_gl_state('translucent', blend=True, depth_test=True)
+                self.p2.set_data(griddata)
+
             view.camera.set_range()
             self.canvas.show()
 
             self.plotexists = True
 
-
-        def set_data(self, data, cdata):
+        def set_data(self, data, cdata, griddata=False):
             #size=10, symbol='o', edge_width=0.5, edge_color='blue'
             self.p1.set_data(data, face_color=cdata)
+            if isinstance(griddata, np.ndarray):
+                self.p2.set_data(griddata, marker_size=0.)
+
+
             self.canvas.update()
 
         def get_vispy_colours(self, vmdr):
@@ -305,7 +313,10 @@ try:
                 moltypes = vmdr.read_moltype() 
                 if moltypes == None:
                     return colours
-                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.]}
+
+
+                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.],
+                            "W":[1., 1., 1., 1.], "CM":[0., 0., 1., 1.], "EO":[0., 1., 1., 1.]}
                 molno = 0
                 for moltype in moltypes:
                     #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
@@ -313,7 +324,7 @@ try:
                     try:
                         colours[molno,:] = typeDict[moltype]
                     except KeyError:
-                        colours[molno,0:3] = self.cmap(float(hash(moltype) % 256) / 256)
+                        colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
                     except IndexError:
                         print(vmdr.n, l)
                     if (molno == vmdr.n-1):
