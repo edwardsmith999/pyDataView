@@ -214,7 +214,7 @@ class MD_PostProc(PostProc):
 
 
         if 'vflux' in (self.fieldfiles1):
-            flux1 = MD_pCVField(self.resultsdir,'vflux', peculiar=False, **kwargs)
+            flux1 = MD_pfluxField(self.resultsdir,'vflux', **kwargs)
             self.plotlist.update({'vflux':flux1})
             flux1 = MD_pCVField(self.resultsdir,'vflux', peculiar=True, **kwargs)
             self.plotlist.update({'CVPressure_k':flux1})
@@ -281,7 +281,8 @@ class MD_PostProc(PostProc):
 
         #CV stresses
         if 'psurface' in (self.fieldfiles1):
-            stress1 = MD_pCVField(self.resultsdir,'psurface', **kwargs)
+            stress1 = MD_pfluxField(self.resultsdir,'psurface', **kwargs)
+            #stress1 = MD_pCVField(self.resultsdir,'psurface', **kwargs)
             self.plotlist.update({'psurface':stress1})
 
         #Total CV stress and stress Heating

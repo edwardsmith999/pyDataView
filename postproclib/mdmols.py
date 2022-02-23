@@ -10,6 +10,16 @@ from .headerdata import *
 from .postproc import PostProc
 from .pplexceptions import NoResultsInDir
 
+class DummyReader:
+
+    def __init__(self, fname="./dummy"):
+        self.fname = fname
+        self.maxrec = 0
+
+    def read_pos(self, start, end):
+        steps = end-start+1
+        return np.zeros([1, 3, steps])
+
 
 class VMDReader:
 

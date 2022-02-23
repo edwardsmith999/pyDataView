@@ -8,9 +8,10 @@ from .channelflowpostproc import channelflow_PostProc
 from .openfoampostproc import OpenFOAM_PostProc
 from .serial_cfdpostproc import Serial_CFD_PostProc
 from .pplexceptions import NoResultsInDir
+
 class All_PostProc:
     
-    def __init__(self,fdir):
+    def __init__(self, fdir):
 
         if not os.path.isdir(fdir):
             print(("Requested directory ", fdir, " does not exist."))

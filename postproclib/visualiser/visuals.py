@@ -7,9 +7,10 @@ from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
-from postproclib.pplexceptions import DataNotAvailable
+from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
 from postproclib.allpostproc import All_PostProc  
 from postproclib.mdmols import MolAllPostProc  
+from postproclib import PostProc  
 from misclib import unicodetolatex, round_to_n
 
 def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
@@ -28,8 +29,19 @@ class VisualiserPanel(wx.Panel):
 
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
-        self.PP = All_PostProc(self.fdir)
-        self.MM = MolAllPostProc(self.fdir)
+        try:
+            self.PP = All_PostProc(self.fdir)
+            fieldfound = True
+        except NoResultsInDir:
+            fieldfound=False
+
+        try:
+            self.MM = MolAllPostProc(self.fdir)
+        except NoResultsInDir:
+            self.MM = PostProc()
+            self.MM.plotlist = {"Empty":[]}
+            if not fieldfound:
+                raise
 
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
@@ -59,7 +71,7 @@ class VisualiserPanel(wx.Panel):
                     self.initialise_visuals(exampleitem)
                     self.handle_plottype(wx.lib.newevent.NewEvent(),
                                          overide_event_str="Molecules")
-                break
+                    break
             except DataNotAvailable as ValueError:
                 pass
 

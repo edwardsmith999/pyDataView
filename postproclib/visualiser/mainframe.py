@@ -2,6 +2,8 @@
 import wx
 import os
 import sys
+import traceback
+
 from postproclib.visualiser import __path__ as pplvpath
 from postproclib.pplexceptions import NoResultsInDir
 
@@ -74,8 +76,11 @@ class MainPanel(wx.Panel):
             raise
             #showMessageDlg('Invalid directory.')
         except NoResultsInDir:
+            tb = traceback.format_exc()
+            print(tb)
             if catch_noresults:
                 showMessageDlg('No results in this directory.')
+
         else:
             self.visualiserpanel = newvp 
             self.vbox.Add(self.visualiserpanel, 1, wx.EXPAND, 0)
