@@ -10,6 +10,33 @@ from .headerdata import *
 from .postproc import PostProc
 from .pplexceptions import NoResultsInDir
 
+
+#from numba import jit
+#@jit(nopython=True)
+#def fast_reorder(data, N):
+
+#    tag = np.zeros(N)
+#    r = np.zeros([N,3])
+#    v = np.zeros([N,3])
+#    rtether = np.zeros([N,3])
+#    moltype = np.zeros(N)
+#    globnum = np.zeros(N)
+
+#    i = 0; Ntethered =0
+#    for n in range(N):
+#        tag[n] = data[i]; i += 1
+#        r[n,:] = data[i:i+3]; i += 3
+#        v[n,:] = data[i:i+3]; i += 3
+
+#        if (tag[n] in [3,5,6,7,10]):
+#            rtether[n,:] = data[i:i+3]; i += 3
+#            Ntethered += 1
+
+#        moltype[n] = data[i]; i += 1
+#        globnum[n] = data[i]; i += 1
+
+#    return tag, r, v, rtether, moltype, globnum, Ntethered
+
 class DummyReader:
 
     def __init__(self, fname="./dummy"):
@@ -26,7 +53,7 @@ class VMDReader:
     def __init__(self, fdir, fname="newest"):
 
         self.fdir = fdir
-        self.n = self.read_header()
+        self.n, self.nprocs = self.read_header()
         #Either take whichever file has been created most recently
         if fname is "newest":
             self.fname = self.check_files()
@@ -46,8 +73,16 @@ class VMDReader:
                 if "globalnp" in l:
                     n = int(l.split(";")[2])
                     break
-
-        return n
+            for l in f:
+                if "npx" in l:
+                    npx = int(l.split(";")[2])
+                if "npy" in l:
+                    npy = int(l.split(";")[2])
+                if "npz" in l:
+                    npz = int(l.split(";")[2])
+                    nproc = npx*npy*npz
+                    break
+        return n, nproc
 
     def check_files(self, dsize=4, ftmp="vmd_temp.dcd", fout="vmd_out.dcd"):
 
@@ -159,39 +194,58 @@ class VMDReader:
 
         return pos
 
+    def read_moltype(self):
 
+        return self.read_psf(5)
 
-    def read_moltype(self, fname="vmd_out.psf"):
-                   
+    def read_tags(self):
+
         #Load tag data (assumes same ordering)
         #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
-        #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}     
+        #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
+        return self.read_psf(4)
 
-        fpsf = self.fdir + "/" +  fname
-        if (os.path.exists(fpsf)):
-            with open(fpsf) as f:
+    def read_psf(self, readdindex, fname="vmd_out.psf"):
+                   
+        #Code to read vmd_out.psf.# where # is the processor number
+        if (readdindex == 5):
+            moltype = np.empty(self.n, dtype='|S2')
+            moltype[:] = "Ar" #Defaul of Argon (LJ) molecules
+        elif (readdindex == 4):
+            moltype = np.zeros(self.n)
+
+        for i in range(1,self.nprocs+1):
+            if self.nprocs != 1:
+                fpsf = self.fdir + "/" +  fname + "." + str(i)
+                if i == 1:
+                    rd = True
+            else:
+                fpsf = self.fdir + "/" +  fname
                 rd = True
-                moltype = []
-                for l in f:
-                    if (rd and "!NATOM" in l):
-                        N = int(l.replace("!NATOM",""))
-                        rd = False
-                        continue
-                    elif (rd):
-                        continue
-                    if "!NBOND" in l:
-                        continue
-                    try:
-                        molno = int(l.split()[0])-1
-                    except IndexError:
-                        print("Line not molecules in ", fname, " skipping")
-                        continue    
-      
-                    moltype.append(l.split()[1])
+            print("Reading file", fpsf, " for ", i, " of ", self.nprocs)
+            if (os.path.exists(fpsf)):
+                with open(fpsf) as f:
+                    for l in f:
+                        if (rd and "!NATOM" in l):
+                            N = int(l.replace("!NATOM",""))
+                            rd = False
+                            continue
+                        elif (rd):
+                            continue
+                        if "!NBOND" in l:
+                            continue
+                        try:
+                            molno = int(l.split()[0])-1
+                        except IndexError:
+                            print("Line not molecules in ", fname, " skipping")
+                            continue    
+                        #Save moltype string in array
+                        moltype[molno] = l.split()[readdindex]
+            else:
+                continue
 
-            return moltype
-        else:
-            return None
+        return moltype
+
 
 class final_state:
 
@@ -202,6 +256,9 @@ class final_state:
 
         #Get filesize and read headersize
         self.size = os.path.getsize(fname)
+        #Empty final state can cause problems
+        if self.size == 0:
+            return
         self.headersize = np.fromfile(fname, dtype=np.int64, offset=self.size-8)
         with open(fname, "rb") as f:
             f.seek(self.headersize[0])
@@ -246,6 +303,8 @@ class final_state:
             for k, i in self.headerDict.items():
                 print(k,i)
 
+
+
     def read_moldata(self):
 
         #Read the rest of the data
@@ -284,6 +343,9 @@ class final_state:
         if (h["potential_flag"]):
             self.potdata = np.zeros([N,8])
             returnDict["potdata"] = self.potdata
+
+
+        #self.tag, self.r, self.v, self.rtether, self.moltype, self.globnum, self.Ntethered = fast_reorder(data, N)
 
         i = 0
         for n in range(N):
@@ -440,38 +502,61 @@ class XYZReader:
 
 
 
-def read_grid(rec, filename="./results/surface.grid", ny=64, nz=64):
+def read_grid(rec, filename="./results/surface.grid", ny=100, nz=100):
     data = np.fromfile(filename, dtype=np.float64)
     N = ny*nz
     Nrecs = int(data.shape[0]/N)
     r = data.reshape([Nrecs,ny,nz])
 
     #First two records are positions in y and z
+    #Next one is skipped to match VMD output
     rec_ = rec+3
 
+    xn = np.zeros(2*ny*nz)
+    yn = np.zeros(2*ny*nz)
+    zn = np.zeros(2*ny*nz)
+
     # plot ! note the parent parameter
-    x = []; y = []; z = []
+    #x = []; y = []; z = []
+    m = 0
     for i in range(nz):
         if (i%2 == 0):
             d = -1
         else:
             d = 1
-        x.append(r[rec_,::d,i])
-        y.append(r[0,::d,i])
-        z.append(r[1,::d,i])
+        xn[m:m+ny] = r[rec_,::d,i]
+        yn[m:m+ny] = r[0,::d,i]
+        zn[m:m+ny] = r[1,::d,i]
+        m += ny
+        #print(i, "rec =", m, " of ", xn.size)
 
-    for j in range(ny):
+        #x.append(r[rec_,::d,i])
+        #y.append(r[0,::d,i])
+        #z.append(r[1,::d,i])
+
+    for j in range(ny-1,-1,-1):
         if (j%2 == 0):
-            d = -1
-        else:
             d = 1
-        x.append(r[rec_,j,::d])
-        y.append(r[0,j,::d])
-        z.append(r[1,j,::d,])
+        else:
+            d = -1
 
-    x = np.array(x)#.ravel()
-    y = np.array(y)#.ravel()
-    z = np.array(z)#.ravel()
+        xn[m:m+nz] = r[rec_,j,::d]
+        yn[m:m+nz] = r[0,j,::d]
+        zn[m:m+nz] = r[1,j,::d]
+        m += nz
+
+
+        #print(j, "rec =", m, " of ", xn.size)
+
+        #x.append(r[rec_,j,::d])
+        #y.append(r[0,j,::d])
+        #z.append(r[1,j,::d,])
+
+   # print(type(x), type(x[0]))
+
+    x = xn #np.array(x)#.ravel()
+    y = yn #np.array(y)#.ravel()
+    z = zn #np.array(z)#.ravel()
 
     return x, y, z
 
