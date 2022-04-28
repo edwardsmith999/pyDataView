@@ -66,6 +66,8 @@ class LAMMPS_RawData(RawData):
         gridx = np.array(uniqueify(xlist))
         gridy = np.array(uniqueify(ylist))
         gridz = np.array(uniqueify(zlist))
+
+        self.domain = [gridx.max(), gridy.max(), gridz.max()]
         
         return [gridx, gridy, gridz] 
 

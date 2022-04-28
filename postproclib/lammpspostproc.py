@@ -48,22 +48,25 @@ class LAMMPS_PostProc(PostProc):
                            print(("logfile ", logfile, " appears to be corrupted " + 
                                  "so cannot determine output filename"))
         else:
-            #print(("logfile ", logfile, " not found"))
-            raise NoResultsInDir
+            pass
+            #print("logfile ", logfile, " not found")
+            #raise NoResultsInDir
 
         if fname == "":
             print("fname not defined, trying 3dgrid")
             fname = "3dgrid"
 
+
         self.plotlist = {}
-        for key, field in list(possibles.items()): 
-            print(key, field, self.resultsdir)
-            try:
-                self.plotlist[key] = field(self.resultsdir, fname)
-            except IOError:
-                pass
-            except ValueError:
-                pass 
+        if os.path.exists(fname):
+            for key, field in list(possibles.items()): 
+                print(key, field, self.resultsdir)
+                try:
+                    self.plotlist[key] = field(self.resultsdir, fname)
+                except IOError:
+                    pass
+                except ValueError:
+                    pass 
 
         if (len(self.plotlist) == 0):
             raise NoResultsInDir
