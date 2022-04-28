@@ -1,8 +1,6 @@
 # -*- encoding: utf-8 -*-
 import wx
 import wx.lib.newevent
-import numpy as np
-import os
 
 from .plot import PyplotPanel
 from .plot import VispyPanel
@@ -10,9 +8,10 @@ from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
 from postproclib.pplexceptions import DataNotAvailable
-from postproclib.allpostproc import All_PostProc
+from postproclib.allpostproc import All_PostProc  
 from postproclib.headerdata import MDHeaderData
 from postproclib.mdmols import MolAllPostProc, read_grid
+from postproclib import PostProc  
 from misclib import unicodetolatex, round_to_n
 
 def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
@@ -32,10 +31,20 @@ class VisualiserPanel(wx.Panel):
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
         self.header = MDHeaderData(self.fdir)
-        self.PP = All_PostProc(self.fdir)
-        self.MM = MolAllPostProc(self.fdir)
-        self.gridfile = self.fdir+"/surface.grid"
+        try:
+            self.PP = All_PostProc(self.fdir)
+            fieldfound = True
+        except NoResultsInDir:
+            fieldfound=False
 
+        try:
+            self.MM = MolAllPostProc(self.fdir)
+        except NoResultsInDir:
+            self.MM = PostProc()
+            self.MM.plotlist = {"Empty":[]}
+            if not fieldfound:
+                raise
+        self.gridfile = self.fdir+"/surface.grid"
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
         # while DataNotAvailable error is returned for some complex classes
@@ -64,7 +73,7 @@ class VisualiserPanel(wx.Panel):
                     self.initialise_visuals(exampleitem)
                     self.handle_plottype(wx.lib.newevent.NewEvent(),
                                          overide_event_str="Molecules")
-                break
+                    break
             except DataNotAvailable as ValueError:
                 pass
 

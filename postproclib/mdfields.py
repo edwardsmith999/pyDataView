@@ -183,7 +183,7 @@ class MD_EField(MDField):
         MD_EField manages energy field data in the form of
         molecular velocity squared and potential energy with 1 
         double precision real data type per bin            
-        e.g. fnames = [Tbins], esnap, Fvext (default in [])
+        e.g. fnames = [Tbins], ebins, esnap, Fvext (default in [])
     """
     
     dtype = 'd'
