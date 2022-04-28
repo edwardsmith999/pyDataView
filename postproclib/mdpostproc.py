@@ -33,7 +33,8 @@ class MD_PostProc(PostProc):
                                 "viscometrics", "rdf", "rdf3d", "ssf", "Fext",
                                 "Tbins", "vPDF", "msolv", "mpoly", "vsolv",
                                 "vpoly", "ebins","hfVA","hfVA_k","hfVA_c",
-                                "msurf", "dsurf_mflux", "dsurf_vflux", "combin", "P")        
+                                "msurf", "dsurf_mflux", "dsurf_vflux", 
+                                "dsurf_eflux", "combin", "P")        
 
         if (not os.path.isdir(self.resultsdir)):
             print(("Directory " +  self.resultsdir + " not found"))
@@ -254,6 +255,11 @@ class MD_PostProc(PostProc):
             flux1 = MD_pfluxField(self.resultsdir,'dsurf_vflux', **kwargs)
             self.plotlist.update({'dsurf_vflux':flux1})
 
+        if 'dsurf_eflux' in (self.fieldfiles1):
+            flux1 = MD_efluxField(self.resultsdir,'dsurf_eflux', **kwargs)
+            self.plotlist.update({'dsurf_eflux':flux1})
+
+
         if ('ebins' in self.fieldfiles1 and
             'vbins' in self.fieldfiles1):
             try:
@@ -284,6 +290,21 @@ class MD_PostProc(PostProc):
             stress1 = MD_pfluxField(self.resultsdir,'psurface', **kwargs)
             #stress1 = MD_pCVField(self.resultsdir,'psurface', **kwargs)
             self.plotlist.update({'psurface':stress1})
+
+        #Total CV stress and stress Heating
+        if ('vflux'   in (self.fieldfiles1) and
+           'psurface' in (self.fieldfiles1)):
+            stress1 = MD_pCVField(self.resultsdir,'total', peculiar=False,**kwargs)
+            self.plotlist.update({'vflux+psurface':stress1})
+
+        #Total CV stress and stress Heating
+        if ('vflux'   in (self.fieldfiles1) and
+           'psurface' in (self.fieldfiles1) and
+           'dsurf_vflux' in (self.fieldfiles1)):
+            stress1 = MD_pCVField(self.resultsdir,'total', peculiar=False, 
+                                  moving_ref=True,**kwargs)
+            self.plotlist.update({'vflux+psurface+dsurf_vflux':stress1})
+
 
         #Total CV stress and stress Heating
         if ('vflux'   in (self.fieldfiles1) and

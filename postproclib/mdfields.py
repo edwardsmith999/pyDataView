@@ -367,7 +367,7 @@ class MD_efluxField(MDField):
         MD_efluxField manages energy flux field data in the form of
         energy/esurface sum over 6 cubic bin surfaces with 6 double 
         precision real data types per bin
-        e.g. fnames = eflux, esurface (no default)
+        e.g. fnames = eflux, esurface, dsurf_eflux (no default)
     """
 
     dtype = 'd'
@@ -375,7 +375,7 @@ class MD_efluxField(MDField):
 
     def __init__(self,fdir,fname):
 
-        if (fname in ("esurface","eflux")):
+        if (fname in ("esurface","eflux","dsurf_eflux")):
             self.fname = fname
             self.labels = ["xbottom","ybottom","zbottom",
                            "xtop","ytop","ztop"]
@@ -1612,7 +1612,7 @@ class MD_rhouuCVField(MD_complexField):
 class MD_pCVField(MD_complexField):
 
 
-    def __init__(self, fdir, fname, peculiar=True):
+    def __init__(self, fdir, fname, peculiar=True, moving_ref=False):
 
         self.fname = fname
         try:
@@ -1627,16 +1627,22 @@ class MD_pCVField(MD_complexField):
             else:
                 raise DataNotAvailable
 
+        if moving_ref:
+            self.pRefField = MD_pfluxField(fdir, fname='dsurf_vflux')
+
         Field.__init__(self,self.PField.Raw)
         self.inherit_parameters(self.PField)
         self.peculiar = peculiar
+        self.moving_ref = moving_ref
 
     def read(self, startrec, endrec, peculiar=None,
-             verbose=False, **kwargs):
+             verbose=False, moving_ref=None, **kwargs):
 
-        # Override peculiar momenta specifier if required
+        # Override peculiar momenta / moving_ref specifier if required
         if peculiar == None:
             peculiar = self.peculiar
+        if moving_ref == None:
+            moving_ref = self.moving_ref
 
         # Read 4D time series from startrec to endrec
         if self.fname in ['total', 'vflux']:
@@ -1656,14 +1662,20 @@ class MD_pCVField(MD_complexField):
             #Otherwise just read psurface
             pflux = self.PField.read(startrec, endrec, **kwargs)
 
+        if moving_ref:
+            pflux = pflux - self.pRefField.read(startrec, endrec, **kwargs)
+
         return pflux
 
     def averaged_data(self, startrec, endrec, 
-                      avgaxes=(), peculiar=None, **kwargs):
+                      avgaxes=(), peculiar=None, 
+                      moving_ref=None, **kwargs):
 
-        # Override peculiar momenta specifier if required
+        # Override peculiar momenta / moving_ref specifier if required
         if peculiar == None:
             peculiar = self.peculiar
+        if moving_ref == None:
+            moving_ref = self.moving_ref
 
         # Read 4D time series from startrec to endrec
         if (avgaxes != ()):
@@ -1689,6 +1701,9 @@ class MD_pCVField(MD_complexField):
                 pflux = self.PField.averaged_data(startrec, endrec, 
                                                   avgaxes=avgaxes, **kwargs)
 
+            if moving_ref:
+                pflux = pflux - self.pRefField.averaged_data(startrec, endrec, 
+                                                             avgaxes=avgaxes, **kwargs)
 
         return pflux
 

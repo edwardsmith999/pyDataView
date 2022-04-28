@@ -114,6 +114,9 @@ class MD_RawData(RawData):
                         float(self.header.globaldomain2),
                         float(self.header.globaldomain3) ])
 
+
+        self.domain = domain
+
         binspaces = []; binsizes = []
         for ixyz in range(3):
             binsize = np.divide(domain[ixyz],gnbins[ixyz])
@@ -378,16 +381,15 @@ class MD_RawData(RawData):
         return bindata
 
 
-    def write(self, data, fdir, fname, startrec=0, endrec=None, dryrun=False, verbose=False):
+    def write(self, data, fdir, fname, startrec=0, endrec=None, 
+              dryrun=False, verbose=False):
+
+        #Use RawData version
+        #return RawData.write(self, data, fdir, fname, startrec, endrec, 
+        #                     dryrun, verbose, separate_outfiles=self.separate_outfiles)
 
         #Check this is a 5D array
         assert len(data.shape) == 5
-
-        #Use default names and directory for object if not specified
-        #if fname is None:
-        #    fname = self.fname
-        #if fdir is None:
-        #    fdir = self.fdir
 
         #Number of records is based on size of data if not specified
         if endrec is None:
@@ -398,7 +400,7 @@ class MD_RawData(RawData):
         if nrecs > data.shape[3]:
             raise IOError("Requested startrec and endrec bigger than datasize")
 
-        print("startrec=",startrec, "endrec=", endrec, "nrecs=", nrecs, "data size=", data.shape)
+        #print("startrec=",startrec, "endrec=", endrec, "nrecs=", nrecs, "data size=", data.shape)
 
         # Check whether the records are written separately
         # If so,
@@ -418,3 +420,5 @@ class MD_RawData(RawData):
             if (not dryrun):
                 with open(fdir+fname,'wb+') as fobj:
                     fobj.write(data[:,:,:,startrec:endrec,:].T.tobytes())
+
+
