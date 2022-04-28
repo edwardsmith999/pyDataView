@@ -236,6 +236,9 @@ class VMDReader:
                             continue
                         try:
                             molno = int(l.split()[0])-1
+                        except ValueError:
+                            molno = int(l.split()[0].replace("\x00",""))-1
+                            #raise
                         except IndexError:
                             print("Line not molecules in ", fname, " skipping")
                             continue    
