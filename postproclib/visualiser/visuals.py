@@ -1,18 +1,22 @@
 # -*- encoding: utf-8 -*-
 import wx
 import wx.lib.newevent
+import os
+import numpy as np
 
 from .plot import PyplotPanel
 from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
-from postproclib.pplexceptions import DataNotAvailable
+from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
 from postproclib.allpostproc import All_PostProc  
 from postproclib.headerdata import MDHeaderData
 from postproclib.mdmols import MolAllPostProc, read_grid
 from postproclib import PostProc  
 from misclib import unicodetolatex, round_to_n
+
+DummyEvent = wx.lib.newevent.NewEvent()
 
 def showMessageDlg(msg, title='Information', style=wx.OK|wx.ICON_INFORMATION):
     """"""
@@ -30,7 +34,7 @@ class VisualiserPanel(wx.Panel):
 
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
-        self.header = MDHeaderData(self.fdir)
+
         try:
             self.PP = All_PostProc(self.fdir)
             fieldfound = True
@@ -71,7 +75,7 @@ class VisualiserPanel(wx.Panel):
                     #Use Example field as others don't exist
                     exampleitem = list(self.PP.plotlist.items())[0]
                     self.initialise_visuals(exampleitem)
-                    self.handle_plottype(wx.lib.newevent.NewEvent(),
+                    self.handle_plottype(DummyEvent,
                                          overide_event_str="Molecules")
                     break
             except DataNotAvailable as ValueError:
@@ -139,7 +143,7 @@ class VisualiserPanel(wx.Panel):
             if k == self.fieldname:    
                 self.choosep.fieldtype_p.fieldradiobox.SetSelection(i)
                 #SetSelection does not cause handle_fieldtype event
-                self.handle_fieldtype(wx.lib.newevent.NewEvent(),
+                self.handle_fieldtype(DummyEvent,
                                       overide_event_str=self.fieldname)
                 break
 
@@ -226,16 +230,17 @@ class VisualiserPanel(wx.Panel):
         #showMessageDlg(exc_info[1])
 
     def SwitchPanels(self, paneltype):
-
+        
         if paneltype is "matplotlib":
-            self.pyplotp.Show()
-            self.vispyp.Hide()
+            if not self.pyplotp.IsShown():
+                self.pyplotp.Show()
+                self.vispyp.Hide()
+                self.Layout()
         elif paneltype is "vispy":
-            self.pyplotp.Hide()
-            self.vispyp.Show()
-
-        self.Layout()
-
+            if not self.vispyp.IsShown():
+                self.pyplotp.Hide()
+                self.vispyp.Show()
+                self.Layout()
 
     def handle_plottype(self, event, overide_event_str=False):
         if not overide_event_str:
@@ -253,9 +258,11 @@ class VisualiserPanel(wx.Panel):
             self.toggle_binslider("Off")
             for b in savebuttons:
                 self.toggle_button(b, "On")
-            self.FieldPanelOnOff("On")
-            self.choosep.moltype_p.Hide()
-            self.choosep.fieldtype_p.Show()
+            if self.choosep.moltype_p.IsShown():
+                self.FieldPanelOnOff("On")
+                self.choosep.moltype_p.Hide()
+                self.choosep.fieldtype_p.Show()
+            self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
         elif plottype == 'Contour':
             self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_contour
@@ -265,9 +272,11 @@ class VisualiserPanel(wx.Panel):
             for b in savebuttons:
                 self.toggle_button(b, "On")
             self.toggle_button(self.choosep.save_d, "Off")
-            self.FieldPanelOnOff("On")
-            self.choosep.moltype_p.Hide()
-            self.choosep.fieldtype_p.Show()
+            if self.choosep.moltype_p.IsShown():
+                self.FieldPanelOnOff("On")
+                self.choosep.moltype_p.Hide()
+                self.choosep.fieldtype_p.Show()
+            self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
         elif plottype == 'Molecules':
             self.SwitchPanels("vispy")
             self.redraw = self.redraw_md
@@ -275,9 +284,10 @@ class VisualiserPanel(wx.Panel):
             self.toggle_binslider("Off")
             for b in savebuttons:
                 self.toggle_button(b, "Off")
-            self.FieldPanelOnOff("Off")
-            self.choosep.fieldtype_p.Hide()
-            self.choosep.moltype_p.Show()
+            if self.choosep.fieldtype_p.IsShown():
+                self.FieldPanelOnOff("Off")
+                self.choosep.fieldtype_p.Hide()
+                self.choosep.moltype_p.Show()
 
             #Set default mol in radiobox
             for i, k in enumerate(sorted(self.MM.plotlist.keys())):
@@ -575,6 +585,8 @@ class VisualiserPanel(wx.Panel):
         #No point loading current record only as whole file needs to be
         #read anyway to get it, better to read in constructor
         #pos = self.vispyp.vmdr.read_pos(self.rec,self.rec+1)
+
+        self.header = MDHeaderData(self.fdir)
 
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)

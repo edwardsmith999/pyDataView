@@ -257,12 +257,12 @@ try:
             self.canvas = scene.SceneCanvas(app="wx", keys='interactive', size=(800,500), 
                                             dpi=200, bgcolor='w', parent=self)
 
-            self.radiobox = wx.RadioBox(self,label='Colours',    
-                                        style=wx.RA_SPECIFY_COLS,
-                                        choices=["velocity","moltype","tags"])
+            #self.radiobox = wx.RadioBox(self,label='Colours',    
+            #                            style=wx.RA_SPECIFY_COLS,
+            #                            choices=["velocity","moltype","tags"])
             box = wx.BoxSizer(wx.VERTICAL)
             box.Add(self.canvas.native, 1, wx.EXPAND | wx.ALL)
-            box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
+            #box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
             self.SetAutoLayout(True)
             self.SetSizer(box)
 
@@ -288,6 +288,7 @@ try:
 
             #GRID
             if isinstance(griddata, np.ndarray):
+                print("griddata in CreatePlot", griddata.shape)
                 self.p2 = Plot3D(parent=view.scene, marker_size=0.)
                 self.p2.set_gl_state('translucent', blend=True, depth_test=True)
                 self.p2.set_data(griddata)
@@ -306,30 +307,36 @@ try:
 
             self.canvas.update()
 
-        def get_vispy_colours(self, vmdr):
+        def get_vispy_colours(self, vmdr, colortype="tags"):
 
             colours = np.ones([vmdr.n, 4])
             try:
-                moltypes = vmdr.read_moltype() 
-                if moltypes == None:
-                    return colours
 
+                if (colortype is "tags"):
+                    tags = vmdr.read_tags() 
+                    colours = np.ones([vmdr.n, 4])
+                    colours[:,:] = self.cmap(tags/tags.max())
+                
+                elif (colortype is "moltype"):
+                    moltypes = vmdr.read_moltype() 
+                    typeDict = {b"Ar":[1., 0., 0., 1.], b"S":[1.,1.,1.,1.],
+                                b"W":[1., 1., 1., 1.], b"CM":[0., 0., 1., 1.], b"EO":[0., 1., 1., 1.]}
+                    molno = 0
+                    for moltype in moltypes:
+                        #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
+                        #Convert tag name to colour
+                        try:
+                            colours[molno,:] = typeDict[moltype]
+                        except KeyError:
+                            colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
+                        except IndexError:
+                            print(vmdr.n, l)
+                        if (molno == vmdr.n-1):
+                            break
+                        molno += 1
 
-                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.],
-                            "W":[1., 1., 1., 1.], "CM":[0., 0., 1., 1.], "EO":[0., 1., 1., 1.]}
-                molno = 0
-                for moltype in moltypes:
-                    #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
-                    #Convert tag name to colour
-                    try:
-                        colours[molno,:] = typeDict[moltype]
-                    except KeyError:
-                        colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
-                    except IndexError:
-                        print(vmdr.n, l)
-                    if (molno == vmdr.n-1):
-                        break
-                    molno += 1
+                elif (colortype is "segment name"):
+                    raise NotImplementedError("segment name plotting is not currently supported")
 
             except AttributeError:
                 #Load tag data (assumes same ordering)
