@@ -2,12 +2,14 @@
 import wx
 import wx.lib.newevent
 
+import os
+
 from .plot import PyplotPanel
 from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
 
-from postproclib.pplexceptions import DataNotAvailable
+from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
 from postproclib.allpostproc import All_PostProc  
 from postproclib.headerdata import MDHeaderData
 from postproclib.mdmols import MolAllPostProc, read_grid
@@ -44,6 +46,7 @@ class VisualiserPanel(wx.Panel):
             self.MM.plotlist = {"Empty":[]}
             if not fieldfound:
                 raise
+
         self.gridfile = self.fdir+"/surface.grid"
         # Loop through all field classes and try to initialise at least one.
         # As fundametal classes typically return zeros on missing results 
@@ -111,6 +114,8 @@ class VisualiserPanel(wx.Panel):
         self.component = 0
         self.normal = 0
         self.plottype = "Profile"
+        self.labels = self.field.labels
+
 
         self.maxbin = len(self.field.grid[self.normal])-1
         self.maxrec = self.field.Raw.maxrec
@@ -275,7 +280,7 @@ class VisualiserPanel(wx.Panel):
             self.toggle_binslider("Off")
             for b in savebuttons:
                 self.toggle_button(b, "Off")
-            self.FieldPanelOnOff("Off")
+            self.FieldPanelOnOff("ComponentsOnly")
             self.choosep.fieldtype_p.Hide()
             self.choosep.moltype_p.Show()
 
@@ -307,6 +312,8 @@ class VisualiserPanel(wx.Panel):
         else:
             self.field = self.PP.plotlist[ftype]
             self.fieldname = ftype
+
+        self.labels = self.field.labels
         self.update_components()
         self.update_normals(self.normal)
 
@@ -334,6 +341,8 @@ class VisualiserPanel(wx.Panel):
             self.mol = self.MM.plotlist[mtype]
             self.molname = mtype
 
+        self.labels = self.mol.labels
+        self.update_components()
         self.maxrec = self.mol.maxrec
         self.slidersp.recslider.slider.SetMax(self.maxrec)
         #Setting autoscale forces a redraw in SetRecord
@@ -346,19 +355,19 @@ class VisualiserPanel(wx.Panel):
     def update_components(self):
         self.choosep.component_p.componentcombobox.Clear()
         try:
-            self.choosep.component_p.componentcombobox.AppendItems(self.field.labels)
+            self.choosep.component_p.componentcombobox.AppendItems(self.labels)
         except AttributeError:
             self.choosep.component_p.componentcombobox.AppendItems(
                 [str(x) for x in range(self.field.nperbin)])
 
         try:
             #Set component to zero if existing one is too large
-            #print("Check", len(self.field.labels), self.component, self.prev_component)
-            if (len(self.field.labels) < self.component+1):
+            #print("Check", len(self.labels), self.component, self.prev_component)
+            if (len(self.labels) < self.component+1):
                 self.prev_component = self.component
                 #print("Saving previous component", self.component)
                 self.component = 0
-            elif (len(self.field.labels) > self.prev_component and
+            elif (len(self.labels) > self.prev_component and
                 self.prev_component != self.component):
                 #print("loading previous component", self.prev_component)
                 self.component = self.prev_component
@@ -511,7 +520,7 @@ class VisualiserPanel(wx.Panel):
     def redraw_plot(self):
         ax, data = self.get_plot_data()
         xlabel = self.field.axislabels[self.normal] 
-        ylabel = self.fieldname + "_" + self.field.labels[self.component] 
+        ylabel = self.fieldname + "_" + self.labels[self.component] 
         self.pyplotp.redraw_plot(ax, data, xlabel, ylabel)
         
         # Set min/max text values
@@ -533,7 +542,7 @@ class VisualiserPanel(wx.Panel):
     def redraw_cpl_plot(self):
         axs, datas = self.get_cpl_plot_data()
         xlabel = self.field.axislabels[self.normal] 
-        ylabel = self.fieldname + "_" + self.field.labels[self.component] 
+        ylabel = self.fieldname + "_" + self.labels[self.component] 
         styles = [{'marker':'o','mec':'none', 'ms':5.0, 'color':'b', 
                    'label':'MD'},#,'linestyle':'none'},
                   {'marker':'x','color':'g', 'mew':2.0, 'ms':5.0, 
@@ -578,7 +587,7 @@ class VisualiserPanel(wx.Panel):
 
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
-        self.mol.colours = self.vispyp.get_vispy_colours(self.mol)   
+        self.mol.colours = self.vispyp.get_vispy_colours(self.mol, self.component)   
 
         if (os.path.exists(self.gridfile)):
             x,y,z = read_grid(self.rec, filename=self.gridfile, 
@@ -613,6 +622,13 @@ class VisualiserPanel(wx.Panel):
         elif(switchon == "Off"):
             self.choosep.fieldtype_p.Enable(False)
             self.choosep.component_p.componentcombobox.Enable(False)
+            self.choosep.component_p.normalcombobox.Enable(False)
+            self.choosep.autoscale_b.Enable(False)
+            self.choosep.minpspin.Enable(False)
+            self.choosep.maxpspin.Enable(False)
+        elif(switchon == "ComponentsOnly"):
+            self.choosep.fieldtype_p.Enable(False)
+            self.choosep.component_p.componentcombobox.Enable(True)
             self.choosep.component_p.normalcombobox.Enable(False)
             self.choosep.autoscale_b.Enable(False)
             self.choosep.minpspin.Enable(False)

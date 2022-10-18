@@ -27,6 +27,8 @@ class VMDReader:
 
         self.fdir = fdir
         self.n = self.read_header()
+        self.labels = ["White", "Red", "tag", "moltype"]
+
         #Either take whichever file has been created most recently
         if fname is "newest":
             self.fname = self.check_files()
@@ -202,7 +204,12 @@ class final_state:
         self.fname = fname
         self.tether_tags = tether_tags
         self.maxrec = 0 #Final state file is a single record
-
+        self.labels = ["White", "Red", 'moltype', 'tags', 
+                        "v1", "v2", "v3",
+                        "globnum", 
+                        "potdata1", "potdata2", "potdata3", "potdata4",
+                        "rtether1", "rtether2", "rtether3",
+                        "rtrue1", "rtrue2", "rtrue3"]
         #Get filesize and read headersize
         self.size = os.path.getsize(fname)
         self.headersize = np.fromfile(fname, dtype=np.int64, offset=self.size-8)
@@ -211,6 +218,7 @@ class final_state:
             self.binaryheader = f.read()
 
         self.read_header(verbose=verbose)
+        self.dataloaded = False
 
     def read_header(self, verbose=False):
 
@@ -249,14 +257,28 @@ class final_state:
             for k, i in self.headerDict.items():
                 print(k,i)
 
+
+    def read_moltype(self):
+
+        molDict = self.read_moldata()
+
+        if "moltype" in molDict:
+            return molDict["moltype"]
+        else:
+            return np.zeros(self.n)
+
     def read_moldata(self):
+
+        if self.dataloaded:
+            return self.MolDict
+        else:
+            returnDict = {}
 
         #Read the rest of the data
         data = np.fromfile(self.fname, dtype=np.double, count=int(self.headersize/8))
 
         #Allocate arrays
         h = self.headerDict
-        returnDict = {}
         N = h["globalnp"]#self.N
         self.n = N
         self.tag = np.zeros(N)
@@ -305,7 +327,9 @@ class final_state:
                 self.globnum[n] = data[i]; i += 1
             if (h["potential_flag"]):
                 self.potdata[n,:] = data[i:i+8]; i += 8
-        
+
+        self.dataloaded = True
+        self.MolDict = returnDict
         return returnDict
 
 
@@ -526,6 +550,16 @@ class MolAllPostProc(PostProc):
         if 'all_cluster.xyz' in (self.fieldfiles1):
             xyz = XYZReader(resultsdir, fname="all_cluster")
             self.plotlist.update({'all_cluster.xyz':xyz})
+
+
+        #Check directory above for intialstate folder
+        if "results" in self.resultsdir:
+            fname = glob.glob(self.resultsdir+os.sep+".."+os.sep+"initial_state")
+            #print(self.resultsdir.replace("results","")+"initial_state", fname)
+            if (fname):
+                self.fieldfiles1.append(fname[0])
+                initstate = final_state(fname[0])
+                self.plotlist.update({'../initial_state':initstate})
 
         if (len(self.plotlist) == 0):
             raise NoResultsInDir

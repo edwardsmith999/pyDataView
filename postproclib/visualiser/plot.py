@@ -257,12 +257,12 @@ try:
             self.canvas = scene.SceneCanvas(app="wx", keys='interactive', size=(800,500), 
                                             dpi=200, bgcolor='w', parent=self)
 
-            self.radiobox = wx.RadioBox(self,label='Colours',    
-                                        style=wx.RA_SPECIFY_COLS,
-                                        choices=["velocity","moltype","tags"])
+            #self.radiobox = wx.RadioBox(self,label='Colours',    
+            #                            style=wx.RA_SPECIFY_COLS,
+            #                            choices=["velocity","moltype","tags"])
             box = wx.BoxSizer(wx.VERTICAL)
             box.Add(self.canvas.native, 1, wx.EXPAND | wx.ALL)
-            box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
+            #box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
             self.SetAutoLayout(True)
             self.SetSizer(box)
 
@@ -294,26 +294,31 @@ try:
 
             view.camera.set_range()
             self.canvas.show()
-
             self.plotexists = True
 
         def set_data(self, data, cdata, griddata=False):
+
             #size=10, symbol='o', edge_width=0.5, edge_color='blue'
             self.p1.set_data(data, face_color=cdata)
             if isinstance(griddata, np.ndarray):
                 self.p2.set_data(griddata, marker_size=0.)
 
-
             self.canvas.update()
 
-        def get_vispy_colours(self, vmdr):
+        def get_vispy_colours(self, vmdr, component):
 
+            c = vmdr.labels[component]
             colours = np.ones([vmdr.n, 4])
-            try:
+            if (c is "White"):
+                pass
+            elif (c is "Red"):
+                colours[:,1] = 0.2
+                colours[:,2] = 0.2
+                colours[:,3] = 0.5
+            elif (c is "moltype"):
                 moltypes = vmdr.read_moltype() 
-                if moltypes == None:
-                    return colours
-
+                #if moltypes == None:
+                #    return colours
 
                 typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.],
                             "W":[1., 1., 1., 1.], "CM":[0., 0., 1., 1.], "EO":[0., 1., 1., 1.]}
@@ -331,14 +336,38 @@ try:
                         break
                     molno += 1
 
-            except AttributeError:
+            elif (c is "tags"):
+
                 #Load tag data (assumes same ordering)
                 #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
                 #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
                 D = vmdr.read_moldata()
                 tags = D["tag"]
-                colours = np.ones([vmdr.n, 4])
                 colours[:,:] = self.cmap(tags/tags.max())
+
+            elif (c in ["v1", "v2", "v3",
+                        "globnum", 
+                        "potdata1", "potdata2", "potdata3", "potdata4", 
+                        "rtrue1", "rtrue2", "rtrue3",
+                        "rtether1", "rtether2", "rtether3"]):
+                D = vmdr.read_moldata()
+                try:
+                    if "1" in c or "2" in c or "3" in  c:
+                        cb = c[:-1]
+                        indx = int(c[-1])-1
+                        if cb in D:
+                            output = D[cb][:,indx]
+                    else:
+                        if c in D:
+                            output = D[c]
+
+                    colours[:,:] = self.cmap(output/output.max())
+
+                #Return plain case if key not found
+                except KeyError:
+                    pass
+                except UnboundLocalError:
+                    pass
 
             return colours
 
