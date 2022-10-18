@@ -32,7 +32,6 @@ class VisualiserPanel(wx.Panel):
 
         if (fdir[-1] != '/'): fdir+='/'
         self.fdir = fdir
-        self.header = MDHeaderData(self.fdir)
         try:
             self.PP = All_PostProc(self.fdir)
             fieldfound = True
@@ -41,6 +40,7 @@ class VisualiserPanel(wx.Panel):
 
         try:
             self.MM = MolAllPostProc(self.fdir)
+            self.header = MDHeaderData(self.fdir)
         except NoResultsInDir:
             self.MM = PostProc()
             self.MM.plotlist = {"Empty":[]}
