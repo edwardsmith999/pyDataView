@@ -288,7 +288,7 @@ class VisualiserPanel(wx.Panel):
             for b in savebuttons:
                 self.toggle_button(b, "Off")
             if self.choosep.fieldtype_p.IsShown():
-                self.FieldPanelOnOff("Off")
+                self.FieldPanelOnOff("ComponentsOnly")
                 self.choosep.fieldtype_p.Hide()
                 self.choosep.moltype_p.Show()
 
@@ -349,6 +349,8 @@ class VisualiserPanel(wx.Panel):
             self.mol = self.MM.plotlist[mtype]
             self.molname = mtype
 
+        self.labels = self.mol.labels
+        self.update_components()
         self.maxrec = self.mol.maxrec
         self.slidersp.recslider.slider.SetMax(self.maxrec)
         #Setting autoscale forces a redraw in SetRecord
