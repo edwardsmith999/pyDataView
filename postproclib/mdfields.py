@@ -587,11 +587,15 @@ class MD_pVAField(MD_complexField):
 
             if (self.fname=='pVA_k' or self.fname=='pVA_ck'):
 
-                rhouuField = MD_rhouuField(self.fdir)
-                rhouudata =  rhouuField.read(startrec,endrec,**kwargs)
+                #Not sure if this is a good idea, might hide errors
+                try:
+                    rhouuField = MD_rhouuField(self.fdir)
+                    rhouudata =  rhouuField.read(startrec,endrec,**kwargs)
 
-                # Remove square of streaming velocity
-                Pdata = Pdata - rhouudata
+                    # Remove square of streaming velocity
+                    Pdata = Pdata - rhouudata
+                except DataNotAvailable:
+                    print("Velocity field not found, cannot subtract streaming velocity")
 
         return Pdata
 
@@ -616,12 +620,17 @@ class MD_pVAField(MD_complexField):
 
             if (self.fname=='pVA_k' or self.fname=='pVA_ck'):
 
-                rhouuField = MD_rhouuField(self.fdir)
-                rhouudata =  rhouuField.averaged_data(startrec, endrec, 
-                                                      avgaxes=avgaxes, **kwargs)
+                #Not sure if this is a good idea, might hide errors
+                try:
 
-                # Remove square of streaming velocity
-                Pdata = Pdata - rhouudata
+                    rhouuField = MD_rhouuField(self.fdir)
+                    rhouudata =  rhouuField.averaged_data(startrec, endrec, 
+                                                        avgaxes=avgaxes, **kwargs)
+
+                    # Remove square of streaming velocity
+                    Pdata = Pdata - rhouudata
+                except DataNotAvailable:
+                    print("Velocity field not found, cannot subtract streaming velocity")
 
         return Pdata
 
