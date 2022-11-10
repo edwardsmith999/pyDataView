@@ -172,7 +172,7 @@ class VMDReader:
 
         return self.read_psf(5)
 
-     def read_tags(self):
+    def read_tags(self):
 
         #Load tag data (assumes same ordering)
         #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
