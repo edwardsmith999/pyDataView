@@ -461,9 +461,10 @@ class VisualiserPanel(wx.Panel):
 
     def SetRecordWidth(self, width):
         self.recwidth = width
-        if (self.recwidth > self.maxrec/2):
-            self.recwidth = self.maxrec/2
-            self.SetRecord(self.maxrec/2)
+        maxrec = int(self.maxrec/2)
+        if (self.recwidth > maxrec):
+            self.recwidth = maxrec
+            self.SetRecord(maxrec)
         self.SetRecord(self.rec)
 
     def SetBin(self, bin):
@@ -480,9 +481,10 @@ class VisualiserPanel(wx.Panel):
 
     def SetBinWidth(self, width):
         self.binwidth = width
-        if (self.binwidth > self.maxbin/2):
-            self.binwidth = self.maxbin/2
-            self.SetBin(self.maxbin/2)
+        maxbin = int(self.maxbin/2)
+        if (self.binwidth > maxbin):
+            self.binwidth = maxbin
+            self.SetBin(maxbin)
         self.SetBin(self.bin)
 
     # Below this point are the data updating/plotting routines
