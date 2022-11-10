@@ -280,11 +280,15 @@ try:
             view.camera = 'turntable'
             view.camera.azimuth = 360.
             view.camera.elevation = 90.
+            view.camera.fov = 0.
 
             # Scatter
             self.p1 = Scatter3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
-            self.p1.set_data(data, face_color=cdata)
+            if data.shape[0] > 100000:
+                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
+            else:
+                self.p1.set_data(data, face_color=cdata, size=5.)
 
             #GRID
             if isinstance(griddata, np.ndarray):
@@ -300,7 +304,11 @@ try:
 
         def set_data(self, data, cdata, griddata=False):
             #size=10, symbol='o', edge_width=0.5, edge_color='blue'
-            self.p1.set_data(data, face_color=cdata)
+            if data.shape[0] > 100000:
+                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
+            else:
+                self.p1.set_data(data, face_color=cdata, size=5.)
+
             if isinstance(griddata, np.ndarray):
                 self.p2.set_data(griddata, marker_size=0.)
 
