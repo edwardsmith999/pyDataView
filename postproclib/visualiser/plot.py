@@ -292,17 +292,16 @@ try:
 
             #GRID
             if isinstance(griddata, np.ndarray):
-                print("griddata in CreatePlot", griddata.shape)
                 self.p2 = Plot3D(parent=view.scene, marker_size=0.)
                 self.p2.set_gl_state('translucent', blend=True, depth_test=True)
                 self.p2.set_data(griddata)
 
             view.camera.set_range()
             self.canvas.show()
-
             self.plotexists = True
 
         def set_data(self, data, cdata, griddata=False):
+
             #size=10, symbol='o', edge_width=0.5, edge_color='blue'
             if data.shape[0] > 100000:
                 self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
@@ -315,47 +314,72 @@ try:
 
             self.canvas.update()
 
-        def get_vispy_colours(self, vmdr, colortype="tags"):
+        def get_vispy_colours(self, vmdr, component):
 
+            c = vmdr.labels[component]
             colours = np.ones([vmdr.n, 4])
-            try:
+            if (c is "White"):
+                pass
+            elif (c is "Red"):
+                colours[:,1] = 0.2
+                colours[:,2] = 0.2
+                colours[:,3] = 0.5
+            elif (c is "moltype"):
+                moltypes = vmdr.read_moltype() 
+                #if moltypes == None:
+                #    return colours
 
-                if (colortype is "tags"):
-                    tags = vmdr.read_tags() 
-                    colours = np.ones([vmdr.n, 4])
-                    colours[:,:] = self.cmap(tags/tags.max())
-                
-                elif (colortype is "moltype"):
-                    moltypes = vmdr.read_moltype() 
-                    typeDict = {b"Ar":[1., 0., 0., 1.], b"S":[1.,1.,1.,1.],
-                                b"W":[1., 1., 1., 1.], b"CM":[0., 0., 1., 1.], b"EO":[0., 1., 1., 1.]}
-                    molno = 0
-                    for moltype in moltypes:
-                        #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
-                        #Convert tag name to colour
-                        try:
-                            colours[molno,:] = typeDict[moltype]
-                        except KeyError:
-                            colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
-                        except IndexError:
-                            print(vmdr.n, l)
-                        if (molno == vmdr.n-1):
-                            break
-                        molno += 1
+                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.],
+                            "W":[1., 1., 1., 1.], "CM":[0., 0., 1., 1.], "EO":[0., 1., 1., 1.]}
+                molno = 0
+                for moltype in moltypes:
+                    #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
+                    #Convert tag name to colour
+                    try:
+                        colours[molno,:] = typeDict[moltype]
+                    except KeyError:
+                        colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
+                    except IndexError:
+                        print(vmdr.n, l)
+                    if (molno == vmdr.n-1):
+                        break
+                    molno += 1
 
-                elif (colortype is "segment name"):
-                    raise NotImplementedError("segment name plotting is not currently supported")
+            elif (c is "tags"):
 
-            except AttributeError:
                 #Load tag data (assumes same ordering)
                 #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
                 #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
                 D = vmdr.read_moldata()
                 tags = D["tag"]
-                colours = np.ones([vmdr.n, 4])
                 colours[:,:] = self.cmap(tags/tags.max())
 
+            elif (c in ["v1", "v2", "v3",
+                        "globnum", 
+                        "potdata1", "potdata2", "potdata3", "potdata4", 
+                        "rtrue1", "rtrue2", "rtrue3",
+                        "rtether1", "rtether2", "rtether3"]):
+                D = vmdr.read_moldata()
+                try:
+                    if "1" in c or "2" in c or "3" in  c:
+                        cb = c[:-1]
+                        indx = int(c[-1])-1
+                        if cb in D:
+                            output = D[cb][:,indx]
+                    else:
+                        if c in D:
+                            output = D[c]
+
+                    colours[:,:] = self.cmap(output/output.max())
+
+                #Return plain case if key not found
+                except KeyError:
+                    pass
+                except UnboundLocalError:
+                    pass
+
             return colours
+
 
 
 except ImportError:

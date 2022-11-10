@@ -10,33 +10,6 @@ from .headerdata import *
 from .postproc import PostProc
 from .pplexceptions import NoResultsInDir
 
-
-#from numba import jit
-#@jit(nopython=True)
-#def fast_reorder(data, N):
-
-#    tag = np.zeros(N)
-#    r = np.zeros([N,3])
-#    v = np.zeros([N,3])
-#    rtether = np.zeros([N,3])
-#    moltype = np.zeros(N)
-#    globnum = np.zeros(N)
-
-#    i = 0; Ntethered =0
-#    for n in range(N):
-#        tag[n] = data[i]; i += 1
-#        r[n,:] = data[i:i+3]; i += 3
-#        v[n,:] = data[i:i+3]; i += 3
-
-#        if (tag[n] in [3,5,6,7,10]):
-#            rtether[n,:] = data[i:i+3]; i += 3
-#            Ntethered += 1
-
-#        moltype[n] = data[i]; i += 1
-#        globnum[n] = data[i]; i += 1
-
-#    return tag, r, v, rtether, moltype, globnum, Ntethered
-
 class DummyReader:
 
     def __init__(self, fname="./dummy"):
@@ -54,6 +27,7 @@ class VMDReader:
 
         self.fdir = fdir
         self.n, self.nprocs = self.read_header()
+        self.labels = ["White", "Red", "tag", "moltype"]
         #Either take whichever file has been created most recently
         if fname is "newest":
             self.fname = self.check_files()
@@ -198,7 +172,7 @@ class VMDReader:
 
         return self.read_psf(5)
 
-    def read_tags(self):
+     def read_tags(self):
 
         #Load tag data (assumes same ordering)
         #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
@@ -249,14 +223,18 @@ class VMDReader:
 
         return moltype
 
-
 class final_state:
 
     def __init__(self, fname= "./final_state", tether_tags = [3,5,6,7,10], verbose=False):
         self.fname = fname
         self.tether_tags = tether_tags
         self.maxrec = 0 #Final state file is a single record
-
+        self.labels = ["White", "Red", 'moltype', 'tags', 
+                        "v1", "v2", "v3",
+                        "globnum", 
+                        "potdata1", "potdata2", "potdata3", "potdata4",
+                        "rtether1", "rtether2", "rtether3",
+                        "rtrue1", "rtrue2", "rtrue3"]
         #Get filesize and read headersize
         self.size = os.path.getsize(fname)
         #Empty final state can cause problems
@@ -268,6 +246,7 @@ class final_state:
             self.binaryheader = f.read()
 
         self.read_header(verbose=verbose)
+        self.dataloaded = False
 
     def read_header(self, verbose=False):
 
@@ -306,16 +285,18 @@ class final_state:
             for k, i in self.headerDict.items():
                 print(k,i)
 
-
-
     def read_moldata(self):
+
+        if self.dataloaded:
+            return self.MolDict
+        else:
+            returnDict = {}
 
         #Read the rest of the data
         data = np.fromfile(self.fname, dtype=np.double, count=int(self.headersize/8))
 
         #Allocate arrays
         h = self.headerDict
-        returnDict = {}
         N = h["globalnp"]#self.N
         self.n = N
         self.tag = np.zeros(N)
@@ -347,9 +328,6 @@ class final_state:
             self.potdata = np.zeros([N,8])
             returnDict["potdata"] = self.potdata
 
-
-        #self.tag, self.r, self.v, self.rtether, self.moltype, self.globnum, self.Ntethered = fast_reorder(data, N)
-
         i = 0
         for n in range(N):
             self.tag[n] = data[i]; i += 1
@@ -367,7 +345,9 @@ class final_state:
                 self.globnum[n] = data[i]; i += 1
             if (h["potential_flag"]):
                 self.potdata[n,:] = data[i:i+8]; i += 8
-        
+
+        self.dataloaded = True
+        self.MolDict = returnDict
         return returnDict
 
 
@@ -505,6 +485,7 @@ class XYZReader:
 
 
 
+
 def read_grid(rec, filename="./results/surface.grid", ny=100, nz=100):
     data = np.fromfile(filename, dtype=np.float64)
     N = ny*nz
@@ -611,6 +592,16 @@ class MolAllPostProc(PostProc):
         if 'all_cluster.xyz' in (self.fieldfiles1):
             xyz = XYZReader(resultsdir, fname="all_cluster")
             self.plotlist.update({'all_cluster.xyz':xyz})
+
+
+        #Check directory above for intialstate folder
+        if "results" in self.resultsdir:
+            fname = glob.glob(self.resultsdir+os.sep+".."+os.sep+"initial_state")
+            #print(self.resultsdir.replace("results","")+"initial_state", fname)
+            if (fname):
+                self.fieldfiles1.append(fname[0])
+                initstate = final_state(fname[0])
+                self.plotlist.update({'../initial_state':initstate})
 
         if (len(self.plotlist) == 0):
             raise NoResultsInDir
