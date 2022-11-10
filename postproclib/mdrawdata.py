@@ -245,6 +245,8 @@ class MD_RawData(RawData):
         return_zeros = False; skip_rec = False; skiprecs = []
 
         # Store how many records are to be read
+        startrec = int(startrec)
+        endrec = int(endrec)
         nrecs = endrec - startrec + 1 
         # Allocate enough memory in the C library to efficiently insert
         # into bindata
