@@ -87,14 +87,20 @@ class OpenFOAM_PostProc(PostProc):
         print(("parallel_run = ", parallel_run, 
               "writeInterval = ", writeInterval, 
               "writecontrol = ", writecontrol))
+
+        #Look for file at first write interval
         if parallel_run:
             path = self.resultsdir + "processor0/" + str(writeInterval) + '/*'
             if not os.path.isdir(path):
                path = self.resultsdir + "processor0/" + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path):
+               path = self.resultsdir + "processor0/0/*"
         else:
             path = self.resultsdir + str(writeInterval) + '/*'
             if not os.path.isdir(path):
                path = self.resultsdir + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path):
+               path = self.resultsdir + "/0/*"
 
         #Try to parse any other files
         self.plotlist = {}
