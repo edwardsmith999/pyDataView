@@ -39,7 +39,11 @@ class OpenFOAM_RawData(RawData):
         #Mock header data needed for vmdfields
         self.header = openfoam_HeaderData(fdir)
         self.delta_t = self.header.headerDict['controlDict']["deltaT"]
-        self.nu = self.header.headerDict['transportProperties']["nu"]  #self.get_nu()
+        #If viscosity found by normal process, use this, otherwise look in constants
+        try:
+            self.nu = self.header.headerDict['transportProperties']["nu"]  
+        except KeyError:
+            self.nu = self.get_nu()
  
         tplot = 1
         skip = 1
