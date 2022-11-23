@@ -1,10 +1,15 @@
 #! /usr/bin/env python
 import numpy as np
 import os
+import sys
 
 from .rawdata import RawData
 from .headerdata import openfoam_HeaderData
 from .pplexceptions import DataNotAvailable, OutsideRecRange
+
+from .OF_field_parser import parse_internal_field
+from .OF_mesh_parser import FoamMesh
+
 
 class OpenFOAM_RawData(RawData):
     
@@ -12,6 +17,9 @@ class OpenFOAM_RawData(RawData):
 
         if (fdir[-1] != '/'): fdir += '/'
         self.fdir = fdir
+        #Define a mesh object using OFpp library
+        #which can handle binary formats
+        self.MeshObj = FoamMesh(fdir)
         self.parallel_run = parallel_run
         if parallel_run==None:
             self.procxyz = self.get_proc_topology()
@@ -358,6 +366,7 @@ class OpenFOAM_RawData(RawData):
                 nxyz = hexentry.split('(')[2].split(')')[0].split()
                 break
 
+
         # Number of grid points is 1 more than number of cells
         #self.ngx = int(int(nxyz[0])/float(self.procxyz[0])) + 1
         self.ngx = int(nxyz[0]) + 1 
@@ -375,7 +384,11 @@ class OpenFOAM_RawData(RawData):
             raise DataNotAvailable
 
         # Read openfoam list of points
-        pointslist = self.read_list(fobj)
+        try:
+            pointslist = self.read_list(fobj)
+        except UnicodeDecodeError:
+            pointslist = self.MeshObj.points #Pointlist supports binary
+
         # Reshape to structured grid, 3 values (x,y,z pos) for each point 
         points = self.reshape_list_to_grid(np.array(pointslist), 3)
 
@@ -400,10 +413,13 @@ class OpenFOAM_RawData(RawData):
             for proc in range(self.procs):
                 fdir = self.fdir+"processor" + str(proc) + "/"
                 fpath = fdir + "/constant/polyMesh/cellProcAddressing"
+
+                #cellProcAddressing = parse_internal_field(fpath)
                 with open(fpath,'r') as fobj:
                     nperprocx = int(self.ncx/float(self.procxyz[0]))
                     nperprocy = int(self.ncy/float(self.procxyz[1]))
                     nperprocz = int(self.ncz/float(self.procxyz[2]))
+
                     celllist = self.read_cells(fobj, nperprocx*nperprocy*nperprocz)
                     #Mapping from local to global cells
                     self.cellmap.append(celllist)
@@ -485,8 +501,26 @@ class OpenFOAM_RawData(RawData):
                     fpath = fdir + self.reclist[startrec+plusrec] + self.fname
 
                     try:
+#                        #Switch to OpenFOAM pp which handles binary
+#                        vtemp = parse_internal_field(fpath)
+
+#                        if (vtemp.shape[0] == 1):
+#                            odata[:,:,:,plusrec,:] = vtemp[0,:]
+#                        else:
+#                            # Loop through cellProcAddress mapping and assign
+#                            # values to global cells
+#                            for i in range(len(vlist)):
+#                                olist[int(self.cellmap[proc][i]),:] = vtemp.ravel()[i]
+#                            odata[:,:,:,plusrec,:] = self.reshape_list_to_cells(olist.T.ravel(), self.npercell, glob=True)
+
                         with open(fpath,'r') as fobj:
-                            vlist = self.read_list_named_entry(fobj, 'internalField')
+                            try:
+                                vlist = self.read_list_named_entry(fobj, 'internalField')
+                            except UnicodeDecodeError:
+                                print("OpenFOAM Binary data cannot be read in parallel, " +
+                                      "use reconstructPar, delete processor* folders " +
+                                      "and run pyDataView again.")
+                                sys.exit(1)
                             #Case when field is constant has a single value
                             if len(vlist) is self.npercell:
                                 for dim in range(self.npercell):
@@ -529,17 +563,27 @@ class OpenFOAM_RawData(RawData):
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
 
-                with open(fpath,'r') as fobj:
-                    vlist = self.read_list_named_entry(fobj, 'internalField')
-                    #Case when field is constant has a single value
-                    if len(vlist) is self.npercell:
-                        for dim in range(self.npercell):
-                            odata[:,:,:,plusrec,dim] = float(vlist[dim])
-                    elif len(vlist) == 0:
-                        odata[:,:,:,plusrec,:] = 0.
-                    else:
-                        vtemp = self.reshape_list_to_cells(vlist, self.npercell)
-                        odata[:,:,:,plusrec,:] = vtemp 
+                #Switch to OpenFOAM pp which handles binary
+                vtemp = parse_internal_field(fpath)
+                if (vtemp.shape[0] == 1):
+                    odata[:,:,:,plusrec,:] = vtemp[0,:]
+                elif vtemp.shape[0] == 0:
+                    odata[:,:,:,plusrec,:] = 0.
+                else:
+                    odata[:,:,:,plusrec,:] = self.reshape_list_to_cells(vtemp, self.npercell)
+
+#                with open(fpath,'r') as fobj:
+#                    vlist = self.read_list_named_entry(fobj, 'internalField')
+#    
+#                    #Case when field is constant has a single value
+#                    if len(vlist) is self.npercell:
+#                        for dim in range(self.npercell):
+#                            odata[:,:,:,plusrec,dim] = float(vlist[dim])
+#                    elif len(vlist) == 0:
+#                        odata[:,:,:,plusrec,:] = 0.
+#                    else:
+#                        vtemp = self.reshape_list_to_cells(vlist, self.npercell)
+#                        odata[:,:,:,plusrec,:] = vtemp 
                 
         # If bin limits are specified, return only those within range
         if (binlimits):

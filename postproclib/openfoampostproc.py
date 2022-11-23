@@ -108,7 +108,8 @@ class OpenFOAM_PostProc(PostProc):
 
         for filename in files:
             try:
-                with open(filename) as f:
+                #Handle if file is binary format
+                with open(filename, encoding="utf8", errors='ignore') as f:
                     for line in f:
                         if "class" in line:
                             fname = filename.split("/")[-1]
@@ -130,6 +131,9 @@ class OpenFOAM_PostProc(PostProc):
             except IndexError:
                 print(("Error reading ", filename))
                 pass
+            except UnicodeDecodeError:
+                print(("Error reading ", filename, " suspect binary format"))
+                raise
             except:
                 raise
 
