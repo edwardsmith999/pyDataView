@@ -565,13 +565,15 @@ class OpenFOAM_RawData(RawData):
 
                 #Switch to OpenFOAM pp which handles binary
                 vtemp = parse_internal_field(fpath)
-                if (vtemp.shape[0] == 1):
-                    odata[:,:,:,plusrec,:] = vtemp[0,:]
-                elif vtemp.shape[0] == 0:
-                    odata[:,:,:,plusrec,:] = 0.
-                else:
-                    odata[:,:,:,plusrec,:] = self.reshape_list_to_cells(vtemp, self.npercell)
-
+                if (type(vtemp) == np.ndarray):
+                    if (vtemp.shape[0] == 1):
+                        odata[:,:,:,plusrec,:] = vtemp[0,:]
+                    elif vtemp.shape[0] == 0:
+                        odata[:,:,:,plusrec,:] = 0.
+                    else:
+                        odata[:,:,:,plusrec,:] = self.reshape_list_to_cells(vtemp, self.npercell)
+                elif (type(vtemp) == float):
+                    odata[:,:,:,plusrec,:] = vtemp
 #                with open(fpath,'r') as fobj:
 #                    vlist = self.read_list_named_entry(fobj, 'internalField')
 #    
