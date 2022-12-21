@@ -91,16 +91,17 @@ class OpenFOAM_PostProc(PostProc):
         #Look for file at first write interval
         if parallel_run:
             path = self.resultsdir + "processor0/" + str(writeInterval) + '/*'
-            if not os.path.isdir(path):
+            if not os.path.isdir(path.replace("*","")):
                path = self.resultsdir + "processor0/" + str(int(writeInterval)) + '/*'
-            if not os.path.isdir(path):
+            if not os.path.isdir(path.replace("*","")):
                path = self.resultsdir + "processor0/0/*"
         else:
             path = self.resultsdir + str(writeInterval) + '/*'
-            if not os.path.isdir(path):
-               path = self.resultsdir + str(int(writeInterval)) + '/*'
-            if not os.path.isdir(path):
-               path = self.resultsdir + "/0/*"
+            if not os.path.isdir(path.replace("*","")):
+                path = self.resultsdir + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path.replace("*","")):
+                print("Cannot find first record at ", path.replace("*",""), " Reverting to 0")
+                path = self.resultsdir + "/0/*"
 
         #Try to parse any other files
         self.plotlist = {}
@@ -135,5 +136,6 @@ class OpenFOAM_PostProc(PostProc):
                 print(("Error reading ", filename, " suspect binary format"))
                 raise
             except:
+                print(("Error reading ", filename))
                 raise
 
