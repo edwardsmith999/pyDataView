@@ -68,7 +68,7 @@ def build_psf():
         chain = data[np.where(data[:,1]==chainID)]
         # keep track of where we are in the data
         lastindex = np.where(data[:,1]==chainID)[0][-1]
-        
+       
         if (chainID%100 == 0):
             progress_bar(float(chainID)/float(maxchainID))
 
@@ -90,7 +90,7 @@ def build_psf():
                 except:
                     print('Failed to find all subchainIDs ' + str(bscIDs) + 
                           ' for chain ID ' + str(chainID))
-                    raise
+                    #raise
 
         try:
             chainID = data[lastindex+1][1]
