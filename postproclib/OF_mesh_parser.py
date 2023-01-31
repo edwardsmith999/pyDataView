@@ -2,7 +2,7 @@
 mesh_parser.py
 parse mesh data from constant/polymesh
 """
-from __future__ import print_function
+
 
 import numpy as np
 import os
@@ -131,7 +131,7 @@ class FoamMesh(object):
         :return: none
         """
         self.neighbour.extend([-10]*(self.num_face - self.num_inner_face))
-        for b in self.boundary.values():
+        for b in list(self.boundary.values()):
             self.neighbour[b.start:b.start+b.num] = [b.id]*b.num
 
     def _construct_cells(self):

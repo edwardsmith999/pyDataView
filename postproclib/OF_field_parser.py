@@ -2,7 +2,7 @@
 field_parser.py
 parser for field data
 """
-from __future__ import print_function
+
 
 import os
 import struct
@@ -77,7 +77,7 @@ def parse_boundary_content(content):
     data = {}
     is_binary = is_binary_format(content)
     bd = split_boundary_content(content)
-    for boundary, (n1, n2) in bd.items():
+    for boundary, (n1, n2) in list(bd.items()):
         pd = {}
         n = n1
         while True:

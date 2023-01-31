@@ -41,7 +41,7 @@ def build_psf():
         print('Getting info from file ' + str(rankfile) + ' of ' + 
               str(len(rankfiles)))
         with open(rankfile,'r') as f:
-            data = data + [map(int,line.split()) for line in f]
+            data = data + [list(map(int,line.split())) for line in f]
 
     # Sort the data into chains (second column is chainID)
     print('Sorting monomers into chains...')
@@ -80,7 +80,7 @@ def build_psf():
                 bflag = monomer[-4:]
                 bstring = "{3:031b}{2:031b}{1:031b}{0:031b}".format(
                           bflag[0],bflag[1],bflag[2],bflag[3])[::-1]
-                barray = np.array(map(int,list(bstring)))
+                barray = np.array(list(map(int,list(bstring))))
                 bscIDs = np.where(barray==1)[0] + 1
                 try:
                     bglobIDs = ([chain[np.where(chain[:,2]==b)][0][0] 
@@ -99,7 +99,7 @@ def build_psf():
 
     # Remove duplicate entries by converting to a set and then back to a list
     pairs_set = set(tuple(p) for p in pairs)   
-    pairs_list = map(list,pairs_set)
+    pairs_list = list(map(list,pairs_set))
 
     # Write the list to polymer_topol.bonds
     write_bonds(pairs_list)
@@ -109,6 +109,6 @@ if __name__ == "__main__":
     # Ask user if they want to concat
     print('Do you wish to concatenate polymer_topol.header and \n'+
           'polymer_topol.bonds to make polymer_topol.psf? (y/n)') 
-    ans = raw_input()
+    ans = input()
     if (ans in ['y','Y','yes','Yes','YES']):
         concat_files()

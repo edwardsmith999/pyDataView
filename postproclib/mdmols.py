@@ -333,7 +333,7 @@ class final_state:
             self.headerDict[self.htypes[i]]=self.hdata[i]
 
         if verbose:
-            for k, i in self.headerDict.items():
+            for k, i in list(self.headerDict.items()):
                 print(k,i)
 
     def read_moldata(self):
