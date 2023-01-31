@@ -536,17 +536,18 @@ class OpenFOAM_RawData(RawData):
                                 odata[:,:,:,plusrec,:] = vtemp
 
                     except IOError:
-                        if use_pyfoam:
-                            # Commented this out as it's slower than custom routines...
-                            try:
-                                from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
-                                with ParsedParameterFile(fpath) as f:
-                                    odata[:,:,:,plusrec,:] = np.array(f['internalField']).reshape([self.ncx, self.ncy, self.ncz, self.npercell])
-                            except ImportError:
-                                print("Failed to load PyFoam, falling back on PyDataView reader")
+                        raise
+#                        if use_pyfoam:
+#                            # Commented this out as it's slower than custom routines...
+#                            try:
+#                                from PyFoam.RunDictionary.ParsedParameterFile import ParsedParameterFile
+#                                with ParsedParameterFile(fpath) as f:
+#                                    odata[:,:,:,plusrec,:] = np.array(f['internalField']).reshape([self.ncx, self.ncy, self.ncz, self.npercell])
+#                            except ImportError:
+#                                print("Failed to load PyFoam, falling back on PyDataView reader")
 
-                        else:
-                            raise
+#                        else:
+#                            raise
     
                     #Try a quick read based on assumed data format, otherwise switch 
 #                    try:

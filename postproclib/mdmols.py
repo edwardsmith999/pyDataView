@@ -26,7 +26,10 @@ class VMDReader:
     def __init__(self, fdir, fname="newest"):
 
         self.fdir = fdir
-        self.n, self.nprocs = self.read_header()
+        #self.n, self.nprocs = self.read_header()
+        self.header = MDHeaderData(fdir)
+        self.n = int(self.header.globalnp)
+        self.nprocs = int(self.header.npx)*int(self.header.npy)*int(self.header.npz)
         self.labels = ["White", "Red", "tag", "moltype"]
         #Either take whichever file has been created most recently
         if fname is "newest":
@@ -222,6 +225,54 @@ class VMDReader:
                 continue
 
         return moltype
+
+    def read_chains(self, moltype, rt):
+
+        """
+            This is copied from flowmol_inputs 
+            and aims to draw all the connections
+        """
+
+        raise RuntimeError("read_chains not yet developed")
+
+        #This needs to be the global molecular numbers
+        #which I think can be obtained from the psf files
+        #globalno = np.fromfile(self.resultsdir + "/initial_dump_globalno",  dtype=np.int32)
+        #sortind = globalno.argsort()
+
+        try:
+            #This needs to be per processor
+            m = np.genfromtxt(self.resultsdir +"/monomers_00000001")
+            indx = m[sortind,0]-1
+            chainID = m[sortind,1]
+            subchainID = m[sortind,2]
+            rs = rt[sortind,:]
+            moltypes = moltype[sortind]
+            polyindx = indx[chainID!=0].astype("int")
+            rchains = rs[polyindx]
+            nmon = int(self.header.nmonomers)
+            #This prevents connections over the whole domain
+            rcutoff = 5 #0.5*min(float(header.globaldomain1),
+                        #      float(header.globaldomain2),
+                        #      float(header.globaldomain3)) 
+            for i in polyindx[::nmon]:
+                #if (i - globalno[i]-1 > 1e-7):
+                #    print("Molecules not ordered by indices, cannot draw chains")
+                #    break
+                #print("chain no = ", chainID[i], i, globalno[i]-1, moltypes[i:i+nmon], subchainID[i:i+nmon])
+                #self.axes.plot(rt[i:i+nmon,0], rt[i:i+nmon,1], rt[i:i+nmon,2], '-', lw=2.)
+                maxmoltype = moltypes.max()
+                for n in range(i,i+nmon-2):
+                    r12 = rt[n,:]-rt[n+1,:]
+                    if (np.linalg.norm(r12) < rcutoff):
+                        self.axes.plot(rt[n:n+2,0], rt[n:n+2,1], rt[n:n+2,2], '-',
+                                       c=cm.RdYlBu_r(moltypes[n]/maxmoltype), lw=2.)
+
+        except OSError as e:
+            print("OSError ", e)
+            pass
+        except IOError:
+            raise
 
 class final_state:
 

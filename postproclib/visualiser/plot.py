@@ -290,7 +290,9 @@ try:
             else:
                 self.p1.set_data(data, face_color=cdata, size=5.)
 
-            #GRID
+            #Add molecule chains
+
+            #Add a GRID
             if isinstance(griddata, np.ndarray):
                 self.p2 = Plot3D(parent=view.scene, marker_size=0.)
                 self.p2.set_gl_state('translucent', blend=True, depth_test=True)
@@ -308,9 +310,11 @@ try:
             else:
                 self.p1.set_data(data, face_color=cdata, size=5.)
 
+            #Add molecule chains
+
+            #Add a GRID
             if isinstance(griddata, np.ndarray):
                 self.p2.set_data(griddata, marker_size=0.)
-
 
             self.canvas.update()
 
