@@ -89,14 +89,21 @@ class OpenFOAM_PostProc(PostProc):
         print(("parallel_run = ", parallel_run, 
               "writeInterval = ", writeInterval, 
               "writecontrol = ", writecontrol))
+
+        #Look for file at first write interval
         if parallel_run:
             path = self.resultsdir + "processor0/" + str(writeInterval) + '/*'
-            if not os.path.isdir(path):
+            if not os.path.isdir(path.replace("*","")):
                path = self.resultsdir + "processor0/" + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path.replace("*","")):
+               path = self.resultsdir + "processor0/0/*"
         else:
             path = self.resultsdir + str(writeInterval) + '/*'
-            if not os.path.isdir(path):
-               path = self.resultsdir + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path.replace("*","")):
+                path = self.resultsdir + str(int(writeInterval)) + '/*'
+            if not os.path.isdir(path.replace("*","")):
+                print("Cannot find first record at ", path.replace("*",""), " Reverting to 0")
+                path = self.resultsdir + "/0/*"
 
         #Try to parse any other files
         self.plotlist = {}
@@ -104,7 +111,8 @@ class OpenFOAM_PostProc(PostProc):
 
         for filename in files:
             try:
-                with open(filename) as f:
+                #Handle if file is binary format
+                with open(filename, encoding="utf8", errors='ignore') as f:
                     for line in f:
                         if "class" in line:
                             fname = filename.split("/")[-1]
@@ -126,6 +134,10 @@ class OpenFOAM_PostProc(PostProc):
             except IndexError:
                 print(("Error reading ", filename))
                 pass
+            except UnicodeDecodeError:
+                print(("Error reading ", filename, " suspect binary format"))
+                raise
             except:
+                print(("Error reading ", filename))
                 raise
 

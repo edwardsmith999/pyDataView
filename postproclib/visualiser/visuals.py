@@ -343,13 +343,19 @@ class VisualiserPanel(wx.Panel):
         else:
             mtype = overide_event_str
 
-        if (self.mol == self.MM.plotlist[mtype]):
+        print(self.MM.plotlist[mtype], self.mol, self.mol == self.MM.plotlist[mtype])
+        #No Molecule data found, raise warning
+        if (self.MM.plotlist[mtype] == []):
+            showMessageDlg("No Molecular data found. Should be format vmd_out.dcd, vmd_temp.dcd, " + 
+                           "final_state, initial_state, etc", title='Information')
+            return
+        elif (self.mol == self.MM.plotlist[mtype]):
             pass
         else:
             self.mol = self.MM.plotlist[mtype]
             self.molname = mtype
 
-        self.labels = self.mol.labels
+        self.labels = self.mol.labels          
         self.update_components()
         self.maxrec = self.mol.maxrec
         self.slidersp.recslider.slider.SetMax(self.maxrec)

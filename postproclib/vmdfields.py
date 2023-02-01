@@ -159,7 +159,7 @@ class VMDFields:
         #Write VMD intervals
         print('Writing VMD intervals data')
         self.starts.sort(); self.ends.sort()
-        self.vmdintervals = zip(self.starts, self.ends)
+        self.vmdintervals = list(zip(self.starts, self.ends))
         with open(self.vol_dir + '/vmd_intervals','w+') as f:
             for i in self.vmdintervals:
                 f.write(str(i[0]) + '\n' + str(i[1]) + '\n')
