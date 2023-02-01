@@ -13,12 +13,12 @@ with open(path.join(here, 'README.md'), encoding='utf-8') as f:
     long_description = f.read()
 
 setup( name = "pyDataViewer",
-       version = "1.0",
-       author = ["Edward Smith","David Trevelyan"],
-       author_email = "edward.smith05@imperial.ac.uk",
+       version = "2.0",
+       author = ["Edward Smith"],
+       author_email = "edward.smith@brunel.ac.uk",
        url = "https://github.com/edwardsmith999/pyDataView",
        classifiers=['Development Status :: 3 - Alpha',
-                     'Programming Language :: Python :: 2.7'],
+                     'Programming Language :: Python :: 3.6'],
        packages=find_packages(exclude=['contrib', 'docs', 'tests']),
        keywords='visualisation scientific data',
        license = "GPL",

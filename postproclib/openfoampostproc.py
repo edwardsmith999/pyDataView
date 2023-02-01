@@ -80,6 +80,8 @@ class OpenFOAM_PostProc(PostProc):
             writeInterval = writeInterval*deltaT
         elif "runTime" in writecontrol:
             writeInterval = writeInterval
+        elif "adjustable" in writecontrol:
+            writeInterval = writeInterval
         else:
             raise IOError("Writecontrol keyword not found in controlDict")
 
