@@ -310,6 +310,7 @@ try:
         def get_vispy_colours(self, vmdr, component):
 
             c = vmdr.labels[component]
+            print("get_vispy_colours", c)
             colours = np.ones([vmdr.n, 4])
             if (c is "White"):
                 pass
@@ -319,11 +320,6 @@ try:
                 colours[:,3] = 0.5
             elif (c is "moltype"):
                 moltypes = vmdr.read_moltype() 
-                #if moltypes == None:
-                #    return colours
-
-                
-
                 typeDict = {b"Ar":[1., 0., 0.], b"S":[1.,1.,1.],
                             b"W":[1., 1., 1.], b"CM":[0., 0., 1.], b"EO":[0., 1., 1.]}
                 molno = 0
@@ -341,13 +337,14 @@ try:
                         break
                     molno += 1
 
-            elif (c is "tags"):
+            elif (c is "tag"):
 
                 #Load tag data (assumes same ordering)
                 #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
                 #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
-                D = vmdr.read_moldata()
-                tags = D["tag"]
+                #D = vmdr.read_moldata()
+                #D["tag"]
+                tags = vmdr.read_tags()
                 colours[:,:] = self.cmap(tags/tags.max())
 
             elif (c in ["v1", "v2", "v3",

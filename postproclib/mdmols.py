@@ -32,7 +32,8 @@ def read_monomers(fdir, filename='monomers'):
         #data.sort(key=itemgetter(1))
         #print('Sorting monomers into chains...')
     else:
-        print("No monomer files found, assuming atomistic case")
+        pass
+        #print("No monomer files found, assuming atomistic case")
 
     return np.array(data)
 
@@ -319,7 +320,12 @@ class VMDReader:
                             print("Line not molecules in ", fname, " skipping")
                             continue    
                         #Save moltype string in array
-                        moltype[molno] = l.split()[readdindex]
+                        try:
+                            psftype = l.split()[readdindex]
+                            moltype[molno] = psftype
+                        except ValueError:
+                            #old format didn't encode tags so still string
+                            moltype[molno] = 0
             else:
                 continue
 
@@ -398,7 +404,7 @@ class final_state:
         self.fname = fname
         self.tether_tags = tether_tags
         self.maxrec = 0 #Final state file is a single record
-        self.labels = ["White", "Red", 'moltype', 'tags', 
+        self.labels = ["White", "Red", 'moltype', 'tag', 
                         "v1", "v2", "v3",
                         "globnum", 
                         "potdata1", "potdata2", "potdata3", "potdata4",
@@ -456,15 +462,18 @@ class final_state:
             for k, i in list(self.headerDict.items()):
                 print(k,i)
 
-    def read_moldata(self):
+    def read_moldata(self, forcereload=False):
 
-        if self.dataloaded:
+        #This prevents reload
+        if self.dataloaded and not forcereload:
             return self.MolDict
         else:
             returnDict = {}
 
         #Read the rest of the data
-        data = np.fromfile(self.fdir+self.fname, dtype=np.double, count=int(self.headersize/8))
+        data = np.fromfile(self.fdir+self.fname, 
+                           dtype=np.double, 
+                           count=int(self.headersize/8))
 
         #Allocate arrays
         h = self.headerDict
@@ -529,6 +538,22 @@ class final_state:
         pos = np.zeros([r.shape[0],r.shape[1],1])
         pos[:,:,0] = r
         return pos
+
+    def read_moltype(self):
+
+        D = self.read_moldata()
+        if "moltype" in D:
+            return D["moltype"]
+        else:
+            return np.zeros(self.n)
+
+    def read_tags(self):
+
+        D = self.read_moldata()
+        if "tag" in D:
+            return D["tag"]
+        else:
+            return np.zeros(self.n)
 
     def read_chains(self):
 
