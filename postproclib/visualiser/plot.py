@@ -269,11 +269,13 @@ try:
             #self.CreatePlot(self.pos[:,:,0], self.colours)
 
 
-        def CreatePlot(self, data, cdata, griddata=False):
+        def CreatePlot(self, data, cdata, connect=None, griddata=False):
 
             # build visuals
-            Scatter3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
-            Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
+            if isinstance(connect, np.ndarray):
+                Mols3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
+            else:
+                Mols3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
 
             # Add a ViewBox to let the user zoom/rotate
             view = self.canvas.central_widget.add_view()
@@ -283,17 +285,20 @@ try:
             view.camera.fov = 0.
 
             # Scatter
-            self.p1 = Scatter3D(parent=view.scene)
+            self.p1 = Mols3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
             if data.shape[0] > 100000:
                 self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
             else:
-                self.p1.set_data(data, face_color=cdata, size=5.)
-
-            #Add molecule chains
+                if isinstance(connect, np.ndarray):
+                    self.p1.set_data(data, face_color=cdata, marker_size=5.,
+                                     color=cdata ,width=10, connect=connect)
+                else:
+                    self.p1.set_data(data, face_color=cdata, size=5.)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):
+                Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
                 self.p2 = Plot3D(parent=view.scene, marker_size=0.)
                 self.p2.set_gl_state('translucent', blend=True, depth_test=True)
                 self.p2.set_data(griddata)
@@ -302,15 +307,17 @@ try:
             self.canvas.show()
             self.plotexists = True
 
-        def set_data(self, data, cdata, griddata=False):
+        def set_data(self, data, cdata, connect=None, griddata=False):
 
             #size=10, symbol='o', edge_width=0.5, edge_color='blue'
             if data.shape[0] > 100000:
                 self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
             else:
-                self.p1.set_data(data, face_color=cdata, size=5.)
-
-            #Add molecule chains
+                if isinstance(connect, np.ndarray):
+                    self.p1.set_data(data, face_color=cdata, marker_size=5.,
+                                     color=cdata, width=10, connect=connect)
+                else:
+                    self.p1.set_data(data, face_color=cdata, size=5.)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):

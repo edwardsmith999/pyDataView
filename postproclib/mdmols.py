@@ -114,7 +114,6 @@ class VMDReader:
             offset = 3 * start * self.n
             print("Loading MD data from " + self.fname, " at offset ", offset)
             data = np.fromfile(self.fname, dtype=np.single, offset=offset)
-
             cntrec = 0
             for rec in range(start, end+1):
                 si = 3*self.n*(rec-start)
@@ -154,7 +153,7 @@ class VMDReader:
                             if data.size == self.n:
                                 pos[:,ixyz,cntrec] = data
                             else:
-                                print(rec, "Extra record of size = ", data.size, " with N mols = ", self.n)
+                                #print(rec, "Extra record of size = ", data.size, " with N mols = ", self.n)
                                 pos[:,ixyz,cntrec] = f.read_record('f4')
                         except TypeError as e:
                             print("Corruped data at record=", rec, " in " 
@@ -181,6 +180,7 @@ class VMDReader:
         #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
         #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
         return self.read_psf(4)
+
 
     def read_psf(self, readdindex, fname="vmd_out.psf"):
                    
@@ -226,57 +226,104 @@ class VMDReader:
 
         return moltype
 
-    def read_chains(self, moltype, rt):
+
+    def read_monomers(self, filename='monomers'):
 
         """
-            This is copied from flowmol_inputs 
-            and aims to draw all the connections
+            Concat list of all monomers from monomers.00000X files, 
+            each written by a processor rank, and store everything 
+            in RAM if poss
         """
+        data = []
+        rankfiles = glob.glob(self.fdir + filename + '_*')
+        for rankfile in rankfiles:
+            print('Getting info from file ' + str(rankfile) + ' of ' + 
+                  str(len(rankfiles)))
+            with open(rankfile,'r') as f:
+                data = data + [list(map(int,line.split())) for line in f]
 
-        raise RuntimeError("read_chains not yet developed")
+        # Sort the data into chains (second column is chainID)
+        print('Sorting monomers into chains...')
 
-        #This needs to be the global molecular numbers
-        #which I think can be obtained from the psf files
-        #globalno = np.fromfile(self.resultsdir + "/initial_dump_globalno",  dtype=np.int32)
-        #sortind = globalno.argsort()
+        return np.array(data)
 
-        try:
-            #This needs to be per processor
-            m = np.genfromtxt(self.resultsdir +"/monomers_00000001")
-            indx = m[sortind,0]-1
-            chainID = m[sortind,1]
-            subchainID = m[sortind,2]
-            rs = rt[sortind,:]
-            moltypes = moltype[sortind]
-            polyindx = indx[chainID!=0].astype("int")
-            rchains = rs[polyindx]
-            nmon = int(self.header.nmonomers)
-            #This prevents connections over the whole domain
-            rcutoff = 5 #0.5*min(float(header.globaldomain1),
-                        #      float(header.globaldomain2),
-                        #      float(header.globaldomain3)) 
-            for i in polyindx[::nmon]:
-                #if (i - globalno[i]-1 > 1e-7):
-                #    print("Molecules not ordered by indices, cannot draw chains")
-                #    break
-                #print("chain no = ", chainID[i], i, globalno[i]-1, moltypes[i:i+nmon], subchainID[i:i+nmon])
-                #self.axes.plot(rt[i:i+nmon,0], rt[i:i+nmon,1], rt[i:i+nmon,2], '-', lw=2.)
-                maxmoltype = moltypes.max()
-                for n in range(i,i+nmon-2):
-                    r12 = rt[n,:]-rt[n+1,:]
-                    if (np.linalg.norm(r12) < rcutoff):
-                        self.axes.plot(rt[n:n+2,0], rt[n:n+2,1], rt[n:n+2,2], '-',
-                                       c=cm.RdYlBu_r(moltypes[n]/maxmoltype), lw=2.)
+    def get_connections(self, chains):
 
-        except OSError as e:
-            print("OSError ", e)
-            pass
-        except IOError:
-            raise
+        """ 
+            Setup connection array from monomer chains data
+            Connectivity needs to be for example
+            Point 0 will be connected with 1 and 2, point 
+            1 with 4 and point 2 with 3 and 4.
+            Given by command:   
+         
+            toconnect = np.array([[0,1], [0,2], [1,4], [2,3], [2,4]])
+
+        """
+        toconnect = []
+        for i in range(chains.shape[0]-1):
+            if (chains[i,1] != 0 and chains[i,1] == chains[i+1,1]):
+                toconnect.append([chains[i,0], chains[i+1,0]])
+
+        return np.array(toconnect)
+
+
+    def read_chains(self):
+
+        chains = self.read_monomers()
+        return self.get_connections(chains)
+
+#        """
+#            This is copied from flowmol_inputs 
+#            and aims to draw all the connections
+#        """
+
+#        raise RuntimeError("read_chains not yet developed")
+
+#        #This needs to be the global molecular numbers
+#        #which I think can be obtained from the psf files
+#        #globalno = np.fromfile(self.resultsdir + "/initial_dump_globalno",  dtype=np.int32)
+#        #sortind = globalno.argsort()
+
+#        try:
+#            #This needs to be per processor
+#            m = np.genfromtxt(self.resultsdir +"/monomers_00000001")
+#            indx = m[sortind,0]-1
+#            chainID = m[sortind,1]
+#            subchainID = m[sortind,2]
+#            rs = rt[sortind,:]
+#            moltypes = moltype[sortind]
+#            polyindx = indx[chainID!=0].astype("int")
+#            rchains = rs[polyindx]
+#            nmon = int(self.header.nmonomers)
+#            #This prevents connections over the whole domain
+#            rcutoff = 5 #0.5*min(float(header.globaldomain1),
+#                        #      float(header.globaldomain2),
+#                        #      float(header.globaldomain3)) 
+#            for i in polyindx[::nmon]:
+#                #if (i - globalno[i]-1 > 1e-7):
+#                #    print("Molecules not ordered by indices, cannot draw chains")
+#                #    break
+#                #print("chain no = ", chainID[i], i, globalno[i]-1, moltypes[i:i+nmon], subchainID[i:i+nmon])
+#                #self.axes.plot(rt[i:i+nmon,0], rt[i:i+nmon,1], rt[i:i+nmon,2], '-', lw=2.)
+#                maxmoltype = moltypes.max()
+#                for n in range(i,i+nmon-2):
+#                    r12 = rt[n,:]-rt[n+1,:]
+#                    if (np.linalg.norm(r12) < rcutoff):
+#                        self.axes.plot(rt[n:n+2,0], rt[n:n+2,1], rt[n:n+2,2], '-',
+#                                       c=cm.RdYlBu_r(moltypes[n]/maxmoltype), lw=2.)
+
+#        except OSError as e:
+#            print("OSError ", e)
+#            pass
+#        except IOError:
+#            raise
 
 class final_state:
 
-    def __init__(self, fname= "./final_state", tether_tags = [3,5,6,7,10], verbose=False):
+    def __init__(self, fdir="./results/", fname= "./final_state", 
+                       tether_tags = [3,5,6,7,10], verbose=False):
+
+        self.fdir = fdir
         self.fname = fname
         self.tether_tags = tether_tags
         self.maxrec = 0 #Final state file is a single record
@@ -409,6 +456,51 @@ class final_state:
         pos = np.zeros([r.shape[0],r.shape[1],1])
         pos[:,:,0] = r
         return pos
+
+    def read_monomers(self, filename='monomers'):
+
+        """
+            Concat list of all monomers from monomers.00000X files, 
+            each written by a processor rank, and store everything 
+            in RAM if poss
+        """
+        data = []
+        rankfiles = glob.glob(self.fdir + filename + '_*')
+        for rankfile in rankfiles:
+            print('Getting info from file ' + str(rankfile) + ' of ' + 
+                  str(len(rankfiles)))
+            with open(rankfile,'r') as f:
+                data = data + [list(map(int,line.split())) for line in f]
+
+        # Sort the data into chains (second column is chainID)
+        print('Sorting monomers into chains...')
+
+        return np.array(data)
+
+    def get_connections(self, chains):
+
+        """ 
+            Setup connection array from monomer chains data
+            Connectivity needs to be for example
+            Point 0 will be connected with 1 and 2, point 
+            1 with 4 and point 2 with 3 and 4.
+            Given by command:   
+         
+            toconnect = np.array([[0,1], [0,2], [1,4], [2,3], [2,4]])
+
+        """
+        toconnect = []
+        for i in range(chains.shape[0]-1):
+            if (chains[i,1] != 0 and chains[i,1] == chains[i+1,1]):
+                toconnect.append([chains[i,0], chains[i+1,0]])
+
+        return np.array(toconnect)
+
+
+    def read_chains(self):
+
+        chains = self.read_monomers()
+        return self.get_connections(chains)
 
     def plot_molecules(self, ax=None):
 
@@ -629,7 +721,7 @@ class MolAllPostProc(PostProc):
             raise NoResultsInDir
 
         if 'final_state' in (self.fieldfiles1):
-            fs = final_state(resultsdir+"./final_state")
+            fs = final_state(resultsdir, "./final_state")
             self.plotlist.update({'final_state':fs})
 
         if 'vmd_out.dcd' in (self.fieldfiles1):
@@ -651,7 +743,7 @@ class MolAllPostProc(PostProc):
             #print(self.resultsdir.replace("results","")+"initial_state", fname)
             if (fname):
                 self.fieldfiles1.append(fname[0])
-                initstate = final_state(fname[0])
+                initstate = final_state("./", fname[0])
                 self.plotlist.update({'../initial_state':initstate})
 
         if (len(self.plotlist) == 0):
