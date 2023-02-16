@@ -57,20 +57,6 @@ def build_psf():
 
     data = read_monomers()
 
-    # Concat list of all monomers, from all ranks, store everything in RAM if poss
-#    data = []
-#    rankfiles = glob.glob('./monomers_*')
-#    for rankfile in rankfiles:
-#        print('Getting info from file ' + str(rankfile) + ' of ' + 
-#              str(len(rankfiles)))
-#        with open(rankfile,'r') as f:
-#            data = data + [list(map(int,line.split())) for line in f]
-
-#    # Sort the data into chains (second column is chainID)
-#    print('Sorting monomers into chains...')
-#    data.sort(key=itemgetter(1))
-#    data = np.array(data)
-
     if data.size == 0:
         return
 

@@ -251,31 +251,19 @@ try:
             self.parent = parent
             self.fdir = parent.fdir
             self.plotexists = False
-
+            self.alpha = 0.5
             self.cmap = matplotlib.cm.RdYlBu_r
-
             self.canvas = scene.SceneCanvas(app="wx", keys='interactive', size=(800,500), 
                                             dpi=200, bgcolor='w', parent=self)
-
-            #self.radiobox = wx.RadioBox(self,label='Colours',    
-            #                            style=wx.RA_SPECIFY_COLS,
-            #                            choices=["velocity","moltype","tags"])
             box = wx.BoxSizer(wx.VERTICAL)
             box.Add(self.canvas.native, 1, wx.EXPAND | wx.ALL)
-            #box.Add(self.radiobox, 1, wx.EXPAND | wx.ALL)
             self.SetAutoLayout(True)
             self.SetSizer(box)
-
-            #self.CreatePlot(self.pos[:,:,0], self.colours)
-
 
         def CreatePlot(self, data, cdata, connect=None, griddata=False):
 
             # build visuals
-            if isinstance(connect, np.ndarray):
-                Mols3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
-            else:
-                Mols3D = scene.visuals.create_visual_node(visuals.MarkersVisual)
+            Mols3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
 
             # Add a ViewBox to let the user zoom/rotate
             view = self.canvas.central_widget.add_view()
@@ -288,18 +276,15 @@ try:
             self.p1 = Mols3D(parent=view.scene)
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
             if data.shape[0] > 100000:
-                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
+                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, 
+                                 marker_size=2., width=2, connect=connect)
             else:
-                if isinstance(connect, np.ndarray):
-                    self.p1.set_data(data, face_color=cdata, marker_size=5.,
-                                     color=cdata ,width=10, connect=connect)
-                else:
-                    self.p1.set_data(data, face_color=cdata, size=5.)
+                self.p1.set_data(data, face_color=cdata, edge_color=[0.,0.,0.,self.alpha], 
+                                 marker_size=5., color=cdata ,width=5, connect=connect)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):
-                Plot3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
-                self.p2 = Plot3D(parent=view.scene, marker_size=0.)
+                self.p2 = Mols3D(parent=view.scene, marker_size=0.)
                 self.p2.set_gl_state('translucent', blend=True, depth_test=True)
                 self.p2.set_data(griddata)
 
@@ -309,15 +294,12 @@ try:
 
         def set_data(self, data, cdata, connect=None, griddata=False):
 
-            #size=10, symbol='o', edge_width=0.5, edge_color='blue'
             if data.shape[0] > 100000:
-                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, size=2.)
+                self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, 
+                                 marker_size=2., width=2, connect=connect)
             else:
-                if isinstance(connect, np.ndarray):
-                    self.p1.set_data(data, face_color=cdata, marker_size=5.,
-                                     color=cdata, width=10, connect=connect)
-                else:
-                    self.p1.set_data(data, face_color=cdata, size=5.)
+                self.p1.set_data(data, face_color=cdata, edge_color=[0.,0.,0.,self.alpha],
+                                 marker_size=5., color=cdata, width=5, connect=connect)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):
@@ -340,16 +322,19 @@ try:
                 #if moltypes == None:
                 #    return colours
 
-                typeDict = {"Ar":[1., 0., 0., 1.], "S":[1.,1.,1.,1.],
-                            "W":[1., 1., 1., 1.], "CM":[0., 0., 1., 1.], "EO":[0., 1., 1., 1.]}
+                
+
+                typeDict = {b"Ar":[1., 0., 0.], b"S":[1.,1.,1.],
+                            b"W":[1., 1., 1.], b"CM":[0., 0., 1.], b"EO":[0., 1., 1.]}
                 molno = 0
                 for moltype in moltypes:
-                    #print(molno, tag, N, float(hash(tag) % 256) / 256, cm[float(hash(tag) % 256) / 256].RGBA[0])
                     #Convert tag name to colour
                     try:
-                        colours[molno,:] = typeDict[moltype]
+                        colours[molno,:3] = typeDict[moltype]
+                        colours[molno,3] = self.alpha
                     except KeyError:
-                        colours[molno,:] = self.cmap(float(hash(moltype) % 256) / 256)
+                        colours[molno,:3] = self.cmap(float(hash(moltype) % 256) / 256)[:3]
+                        colours[molno,3] = self.alpha
                     except IndexError:
                         print(vmdr.n, l)
                     if (molno == vmdr.n-1):

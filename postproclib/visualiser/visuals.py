@@ -265,7 +265,9 @@ class VisualiserPanel(wx.Panel):
                 self.FieldPanelOnOff("On")
                 self.choosep.moltype_p.Hide()
                 self.choosep.fieldtype_p.Show()
+            autoscale_state = self.autoscale; self.autoscale=True
             self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
+            self.autoscale = autoscale_state
         elif plottype == 'Contour':
             self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_contour
@@ -279,7 +281,9 @@ class VisualiserPanel(wx.Panel):
                 self.FieldPanelOnOff("On")
                 self.choosep.moltype_p.Hide()
                 self.choosep.fieldtype_p.Show()
+            autoscale_state = self.autoscale; self.autoscale=True
             self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
+            self.autoscale = autoscale_state
         elif plottype == 'Molecules':
             self.SwitchPanels("vispy")
             self.redraw = self.redraw_md

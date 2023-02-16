@@ -3,12 +3,123 @@ import numpy as np
 import os
 import struct
 import glob
-
+from operator import itemgetter
 from scipy.io import FortranFile
 
 from .headerdata import *
 from .postproc import PostProc
 from .pplexceptions import NoResultsInDir
+
+# Currently these are helper functions used in both final state
+# and vmd reader, ideally these would be part of a generic base class
+
+def read_monomers(fdir, filename='monomers'):
+
+    """
+        Concat list of all monomers from monomers.00000X files, 
+        each written by a processor rank, and store everything 
+        in RAM if poss
+    """
+    data = []
+    rankfiles = glob.glob(fdir + filename + '_*')
+    if (rankfiles):
+        for rankfile in rankfiles:
+            print('Getting info from file ' + str(rankfile) + ' of ' + 
+                  str(len(rankfiles)))
+            with open(rankfile,'r') as f:
+                data = data + [list(map(int,line.split())) for line in f]
+        # Sort the data into chains (second column is chainID)
+        #data.sort(key=itemgetter(1))
+        #print('Sorting monomers into chains...')
+    else:
+        print("No monomer files found, assuming atomistic case")
+
+    return np.array(data)
+
+def get_connections(chains):
+
+    """ 
+        Setup connection array from monomer chains data
+        Connectivity needs to be for example
+        Point 0 will be connected with 1 and 2, point 
+        1 with 4 and point 2 with 3 and 4.
+        Given by command:   
+     
+        toconnect = np.array([[0,1], [0,2], [1,4], [2,3], [2,4]])
+
+    """
+    if (chains.size == 0):
+        #Default with no connections to 0 connected to 0
+        toconnect = np.array([[0,0]])
+    else:
+        toconnect = []
+        for i in range(chains.shape[0]-1):
+            if (chains[i,1] != 0):
+                if (chains[i,1] == chains[i+1,1]):
+                    toconnect.append([chains[i,0], chains[i+1,0]])
+        #Subtract 1 as Python is zero indexed
+        toconnect = np.array(toconnect)-1
+    return toconnect
+
+
+def read_grid(rec, filename="./results/surface.grid", ny=100, nz=100):
+    data = np.fromfile(filename, dtype=np.float64)
+    N = ny*nz
+    Nrecs = int(data.shape[0]/N)
+    r = data.reshape([Nrecs,ny,nz])
+
+    #First two records are positions in y and z
+    #Next one is skipped to match VMD output
+    rec_ = rec+3
+
+    xn = np.zeros(2*ny*nz)
+    yn = np.zeros(2*ny*nz)
+    zn = np.zeros(2*ny*nz)
+
+    # plot ! note the parent parameter
+    #x = []; y = []; z = []
+    m = 0
+    for i in range(nz):
+        if (i%2 == 0):
+            d = -1
+        else:
+            d = 1
+        xn[m:m+ny] = r[rec_,::d,i]
+        yn[m:m+ny] = r[0,::d,i]
+        zn[m:m+ny] = r[1,::d,i]
+        m += ny
+        #print(i, "rec =", m, " of ", xn.size)
+
+        #x.append(r[rec_,::d,i])
+        #y.append(r[0,::d,i])
+        #z.append(r[1,::d,i])
+
+    for j in range(ny-1,-1,-1):
+        if (j%2 == 0):
+            d = 1
+        else:
+            d = -1
+
+        xn[m:m+nz] = r[rec_,j,::d]
+        yn[m:m+nz] = r[0,j,::d]
+        zn[m:m+nz] = r[1,j,::d]
+        m += nz
+
+
+        #print(j, "rec =", m, " of ", xn.size)
+
+        #x.append(r[rec_,j,::d])
+        #y.append(r[0,j,::d])
+        #z.append(r[1,j,::d,])
+
+   # print(type(x), type(x[0]))
+
+    x = xn #np.array(x)#.ravel()
+    y = yn #np.array(y)#.ravel()
+    z = zn #np.array(z)#.ravel()
+
+    return x, y, z
+
 
 class DummyReader:
 
@@ -41,25 +152,25 @@ class VMDReader:
         else:
             raise IOError("fname", fname, " is not recognised in VMDReader") 
 
-    def read_header(self, headername="/simulation_header"):
+#    def read_header(self, headername="/simulation_header"):
 
-        #Load number of molecules data
-        fname = self.fdir + headername
-        with open(fname,"r") as f:
-            for l in f:
-                if "globalnp" in l:
-                    n = int(l.split(";")[2])
-                    break
-            for l in f:
-                if "npx" in l:
-                    npx = int(l.split(";")[2])
-                if "npy" in l:
-                    npy = int(l.split(";")[2])
-                if "npz" in l:
-                    npz = int(l.split(";")[2])
-                    nproc = npx*npy*npz
-                    break
-        return n, nproc
+#        #Load number of molecules data
+#        fname = self.fdir + headername
+#        with open(fname,"r") as f:
+#            for l in f:
+#                if "globalnp" in l:
+#                    n = int(l.split(";")[2])
+#                    break
+#            for l in f:
+#                if "npx" in l:
+#                    npx = int(l.split(";")[2])
+#                if "npy" in l:
+#                    npy = int(l.split(";")[2])
+#                if "npz" in l:
+#                    npz = int(l.split(";")[2])
+#                    nproc = npx*npy*npz
+#                    break
+#        return n, nproc
 
     def check_files(self, dsize=4, ftmp="vmd_temp.dcd", fout="vmd_out.dcd"):
 
@@ -118,7 +229,7 @@ class VMDReader:
             for rec in range(start, end+1):
                 si = 3*self.n*(rec-start)
                 ei = 3*self.n*(rec-start+1)
-                print("Loading record ", rec)
+                #print("Loading record ", rec)
                 for ixyz in range(3):
                     pos[:,ixyz,cntrec] = data[si+self.n*ixyz:si+self.n*(ixyz+1)]
                 cntrec += 1
@@ -170,18 +281,6 @@ class VMDReader:
 
         return pos
 
-    def read_moltype(self):
-
-        return self.read_psf(5)
-
-    def read_tags(self):
-
-        #Load tag data (assumes same ordering)
-        #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
-        #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
-        return self.read_psf(4)
-
-
     def read_psf(self, readdindex, fname="vmd_out.psf"):
                    
         #Code to read vmd_out.psf.# where # is the processor number
@@ -226,51 +325,23 @@ class VMDReader:
 
         return moltype
 
+    def read_moltype(self):
 
-    def read_monomers(self, filename='monomers'):
+        return self.read_psf(5)
 
-        """
-            Concat list of all monomers from monomers.00000X files, 
-            each written by a processor rank, and store everything 
-            in RAM if poss
-        """
-        data = []
-        rankfiles = glob.glob(self.fdir + filename + '_*')
-        for rankfile in rankfiles:
-            print('Getting info from file ' + str(rankfile) + ' of ' + 
-                  str(len(rankfiles)))
-            with open(rankfile,'r') as f:
-                data = data + [list(map(int,line.split())) for line in f]
+    def read_tags(self):
 
-        # Sort the data into chains (second column is chainID)
-        print('Sorting monomers into chains...')
+        #Load tag data (assumes same ordering)
+        #tagDict = {"free": 0, "fixed": 1, "fixed_slide": 2, "teth": 3, "thermo": 4, 
+        #            "teth_thermo": 5, "teth_slide": 6, "teth_thermo_slide": 7}   
+        return self.read_psf(4)
 
-        return np.array(data)
-
-    def get_connections(self, chains):
-
-        """ 
-            Setup connection array from monomer chains data
-            Connectivity needs to be for example
-            Point 0 will be connected with 1 and 2, point 
-            1 with 4 and point 2 with 3 and 4.
-            Given by command:   
-         
-            toconnect = np.array([[0,1], [0,2], [1,4], [2,3], [2,4]])
-
-        """
-        toconnect = []
-        for i in range(chains.shape[0]-1):
-            if (chains[i,1] != 0 and chains[i,1] == chains[i+1,1]):
-                toconnect.append([chains[i,0], chains[i+1,0]])
-
-        return np.array(toconnect)
 
 
     def read_chains(self):
 
-        chains = self.read_monomers()
-        return self.get_connections(chains)
+        chains = read_monomers(self.fdir)
+        return get_connections(chains)
 
 #        """
 #            This is copied from flowmol_inputs 
@@ -333,13 +404,15 @@ class final_state:
                         "potdata1", "potdata2", "potdata3", "potdata4",
                         "rtether1", "rtether2", "rtether3",
                         "rtrue1", "rtrue2", "rtrue3"]
+
         #Get filesize and read headersize
-        self.size = os.path.getsize(fname)
+        self.size = os.path.getsize(fdir+fname)
+
         #Empty final state can cause problems
         if self.size == 0:
             return
-        self.headersize = np.fromfile(fname, dtype=np.int64, offset=self.size-8)
-        with open(fname, "rb") as f:
+        self.headersize = np.fromfile(fdir+fname, dtype=np.int64, offset=self.size-8)
+        with open(fdir+fname, "rb") as f:
             f.seek(self.headersize[0])
             self.binaryheader = f.read()
 
@@ -391,7 +464,7 @@ class final_state:
             returnDict = {}
 
         #Read the rest of the data
-        data = np.fromfile(self.fname, dtype=np.double, count=int(self.headersize/8))
+        data = np.fromfile(self.fdir+self.fname, dtype=np.double, count=int(self.headersize/8))
 
         #Allocate arrays
         h = self.headerDict
@@ -457,50 +530,10 @@ class final_state:
         pos[:,:,0] = r
         return pos
 
-    def read_monomers(self, filename='monomers'):
-
-        """
-            Concat list of all monomers from monomers.00000X files, 
-            each written by a processor rank, and store everything 
-            in RAM if poss
-        """
-        data = []
-        rankfiles = glob.glob(self.fdir + filename + '_*')
-        for rankfile in rankfiles:
-            print('Getting info from file ' + str(rankfile) + ' of ' + 
-                  str(len(rankfiles)))
-            with open(rankfile,'r') as f:
-                data = data + [list(map(int,line.split())) for line in f]
-
-        # Sort the data into chains (second column is chainID)
-        print('Sorting monomers into chains...')
-
-        return np.array(data)
-
-    def get_connections(self, chains):
-
-        """ 
-            Setup connection array from monomer chains data
-            Connectivity needs to be for example
-            Point 0 will be connected with 1 and 2, point 
-            1 with 4 and point 2 with 3 and 4.
-            Given by command:   
-         
-            toconnect = np.array([[0,1], [0,2], [1,4], [2,3], [2,4]])
-
-        """
-        toconnect = []
-        for i in range(chains.shape[0]-1):
-            if (chains[i,1] != 0 and chains[i,1] == chains[i+1,1]):
-                toconnect.append([chains[i,0], chains[i+1,0]])
-
-        return np.array(toconnect)
-
-
     def read_chains(self):
 
-        chains = self.read_monomers()
-        return self.get_connections(chains)
+        chains = read_monomers(self.fdir)
+        return get_connections(chains)
 
     def plot_molecules(self, ax=None):
 
@@ -535,7 +568,7 @@ class final_state:
 
         #Default to same filename with a 2
         if (outfile is None):
-            outfile = self.fname + "2"
+            outfile = self.fdir+self.fname + "2"
 
         h = self.headerDict
         N = h["globalnp"]
@@ -626,68 +659,6 @@ class XYZReader:
         raise RuntimeError("XYZReader not yet developed")
 
 
-
-
-
-def read_grid(rec, filename="./results/surface.grid", ny=100, nz=100):
-    data = np.fromfile(filename, dtype=np.float64)
-    N = ny*nz
-    Nrecs = int(data.shape[0]/N)
-    r = data.reshape([Nrecs,ny,nz])
-
-    #First two records are positions in y and z
-    #Next one is skipped to match VMD output
-    rec_ = rec+3
-
-    xn = np.zeros(2*ny*nz)
-    yn = np.zeros(2*ny*nz)
-    zn = np.zeros(2*ny*nz)
-
-    # plot ! note the parent parameter
-    #x = []; y = []; z = []
-    m = 0
-    for i in range(nz):
-        if (i%2 == 0):
-            d = -1
-        else:
-            d = 1
-        xn[m:m+ny] = r[rec_,::d,i]
-        yn[m:m+ny] = r[0,::d,i]
-        zn[m:m+ny] = r[1,::d,i]
-        m += ny
-        #print(i, "rec =", m, " of ", xn.size)
-
-        #x.append(r[rec_,::d,i])
-        #y.append(r[0,::d,i])
-        #z.append(r[1,::d,i])
-
-    for j in range(ny-1,-1,-1):
-        if (j%2 == 0):
-            d = 1
-        else:
-            d = -1
-
-        xn[m:m+nz] = r[rec_,j,::d]
-        yn[m:m+nz] = r[0,j,::d]
-        zn[m:m+nz] = r[1,j,::d]
-        m += nz
-
-
-        #print(j, "rec =", m, " of ", xn.size)
-
-        #x.append(r[rec_,j,::d])
-        #y.append(r[0,j,::d])
-        #z.append(r[1,j,::d,])
-
-   # print(type(x), type(x[0]))
-
-    x = xn #np.array(x)#.ravel()
-    y = yn #np.array(y)#.ravel()
-    z = zn #np.array(z)#.ravel()
-
-    return x, y, z
-
-
 class MolAllPostProc(PostProc):
 
     def __init__(self, resultsdir, **kwargs):
@@ -743,7 +714,7 @@ class MolAllPostProc(PostProc):
             #print(self.resultsdir.replace("results","")+"initial_state", fname)
             if (fname):
                 self.fieldfiles1.append(fname[0])
-                initstate = final_state("./", fname[0])
+                initstate = final_state("", fname[0])
                 self.plotlist.update({'../initial_state':initstate})
 
         if (len(self.plotlist) == 0):
