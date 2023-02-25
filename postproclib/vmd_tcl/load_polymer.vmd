@@ -24,6 +24,10 @@ set D_colour 9
 set C_colour 5
 set P_colour 0
 set A_colour 15
+set EM_colour 2
+set OA_colour 4
+set T_colour 6
+set W1_colour 15
 
 #Molecule sizes based on base scale and set using size ratios
 set scale 0.6
@@ -35,6 +39,10 @@ set CM_size [expr 0.7*$scale]
 set S_size [expr 1.1*$scale]
 set P_size [expr 1.1*$scale]
 set A_size [expr 1.*$scale]
+set EM_size [expr 1.13*$scale]
+set OA_size [expr 1.08*$scale]
+set T_size [expr 1.324*$scale]
+set W1_size [expr 0.854*$scale]
 
 #LOAD POLYMER MOLECULES
 mol new {./polymer_topol.psf} type {psf} first 0 last -1 step 1 waitfor all
@@ -81,6 +89,26 @@ set repSOL [newrep top repSOL]
 mol modstyle $repSOL top CPK $A_size 0.000000 10.000000 10.000000
 mol modmaterial $repSOL top AOChalky
 
+mol selection type EM
+set repEM [newrep top repEM]
+mol modstyle $repEM top CPK $EM_size 0.000000 10.000000 10.000000
+mol modmaterial $repEM top AOChalky
+
+mol selection type OA
+set repOA [newrep top repOA]
+mol modstyle $repOA top CPK $OA_size 0.000000 10.000000 10.000000
+mol modmaterial $repOA top AOChalky
+
+mol selection type T
+set repT [newrep top repT]
+mol modstyle $repT top CPK $T_size 0.000000 10.000000 10.000000
+mol modmaterial $repT top AOChalky
+
+mol selection type W1
+set repW1 [newrep top repW1]
+mol modstyle $repW1 top CPK $W1_size 0.000000 10.000000 10.000000
+mol modmaterial $repW1 top AOChalky
+
 #Set default color for types
 color Name W $W_colour
 color Name E $EO_colour
@@ -89,4 +117,7 @@ color Name M $M_colour
 color Name D $D_colour
 color Name P $P_colour
 color Name A $A_colour
-
+color Name EM $EM_colour
+color Name OA $OA_colour
+color Name T $T_colour
+color Name W1 $W1_colour

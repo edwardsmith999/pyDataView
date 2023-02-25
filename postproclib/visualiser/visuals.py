@@ -265,7 +265,9 @@ class VisualiserPanel(wx.Panel):
                 self.FieldPanelOnOff("On")
                 self.choosep.moltype_p.Hide()
                 self.choosep.fieldtype_p.Show()
+            autoscale_state = self.autoscale; self.autoscale=True
             self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
+            self.autoscale = autoscale_state
         elif plottype == 'Contour':
             self.SwitchPanels("matplotlib")
             self.redraw = self.redraw_contour
@@ -279,7 +281,9 @@ class VisualiserPanel(wx.Panel):
                 self.FieldPanelOnOff("On")
                 self.choosep.moltype_p.Hide()
                 self.choosep.fieldtype_p.Show()
+            autoscale_state = self.autoscale; self.autoscale=True
             self.handle_fieldtype(DummyEvent, overide_event_str=self.fieldname)
+            self.autoscale = autoscale_state
         elif plottype == 'Molecules':
             self.SwitchPanels("vispy")
             self.redraw = self.redraw_md
@@ -606,6 +610,7 @@ class VisualiserPanel(wx.Panel):
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
         self.mol.colours = self.vispyp.get_vispy_colours(self.mol, self.component)   
+        self.mol.chains = self.mol.read_chains()
 
         if (os.path.exists(self.gridfile)):
             x,y,z = read_grid(self.rec, filename=self.gridfile, 
@@ -614,7 +619,8 @@ class VisualiserPanel(wx.Panel):
         else:
             griddata = False
         if (not self.vispyp.plotexists): 
-            self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours, griddata)
+            self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                   connect=self.mol.chains, griddata=griddata)
         else:
             self.update_md()
 
@@ -625,9 +631,11 @@ class VisualiserPanel(wx.Panel):
                 x,y,z = read_grid(self.rec, filename=self.gridfile, 
                                 ny=int(self.header.nbins2), nz=int(self.header.nbins3))
                 griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
-                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, griddata)
+                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                   connect=self.mol.chains, griddata=griddata)
             else:
-                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours)
+                self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                     connect=self.mol.chains)
 
     def FieldPanelOnOff(self, switchon):
         if (switchon == "On"):
