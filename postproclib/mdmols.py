@@ -20,24 +20,24 @@ def read_monomers(fdir, filename='monomers'):
         each written by a processor rank, and store everything 
         in RAM if poss
     """
-    data = []
+    chains = []
     rankfiles = glob.glob(fdir + filename + '_*')
     if (rankfiles):
         for rankfile in rankfiles:
-            print('Getting info from file ' + str(rankfile) + ' of ' + 
-                  str(len(rankfiles)))
+            #print('Getting info from file ' + str(rankfile) + ' of ' + 
+            #      str(len(rankfiles)))
             with open(rankfile,'r') as f:
-                data = data + [list(map(int,line.split())) for line in f]
+                chains = chains + [list(map(int,line.split())) for line in f]
         # Sort the data into chains (second column is chainID)
-        #data.sort(key=itemgetter(1))
+        #chains.sort(key=itemgetter(1))
         #print('Sorting monomers into chains...')
     else:
         pass
         #print("No monomer files found, assuming atomistic case")
 
-    return np.array(data)
+    return np.array(chains)
 
-def get_connections(chains):
+def get_connections(chains, pos, maxdist=5.0):
 
     """ 
         Setup connection array from monomer chains data
@@ -57,9 +57,21 @@ def get_connections(chains):
         for i in range(chains.shape[0]-1):
             if (chains[i,1] != 0):
                 if (chains[i,1] == chains[i+1,1]):
-                    toconnect.append([chains[i,0], chains[i+1,0]])
+                    #Check for periodic boundary wraparound
+                    dist = np.abs(np.linalg.norm(pos[chains[i,0]-1,:]-pos[chains[i+1,0]-1,:]))
+                    if (dist < maxdist):
+                        toconnect.append([chains[i,0], chains[i+1,0]])
+#                    if (np.abs(pos[chains[i,0]-1,0]-pos[chains[i+1,0],0]) < maxdist or
+#                        np.abs(pos[chains[i,0],1]-pos[chains[i+1,0],1]) < maxdist or
+#                        np.abs(pos[chains[i,0],2]-pos[chains[i+1,0],2]) < maxdist ):
+
         #Subtract 1 as Python is zero indexed
         toconnect = np.array(toconnect)-1
+
+    #If nothing found that can be connected
+    if (toconnect.shape[0]==0):
+        toconnect = np.array([[0,0]])
+
     return toconnect
 
 
@@ -142,6 +154,9 @@ class VMDReader:
         self.header = MDHeaderData(fdir)
         self.n = int(self.header.globalnp)
         self.nprocs = int(self.header.npx)*int(self.header.npy)*int(self.header.npz)
+        self.Lxyz = np.array([float(self.header.globaldomain1),
+                              float(self.header.globaldomain2),
+                              float(self.header.globaldomain3)])
         self.labels = ["White", "Red", "tag", "moltype"]
         #Either take whichever file has been created most recently
         if fname is "newest":
@@ -344,10 +359,10 @@ class VMDReader:
 
 
 
-    def read_chains(self):
+    def read_chains(self, pos):
 
         chains = read_monomers(self.fdir)
-        return get_connections(chains)
+        return get_connections(chains, pos)
 
 #        """
 #            This is copied from flowmol_inputs 
@@ -555,10 +570,10 @@ class final_state:
         else:
             return np.zeros(self.n)
 
-    def read_chains(self):
+    def read_chains(self, pos):
 
         chains = read_monomers(self.fdir)
-        return get_connections(chains)
+        return get_connections(chains, pos)
 
     def plot_molecules(self, ax=None):
 
