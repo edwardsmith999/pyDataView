@@ -23,8 +23,8 @@ Choosing the path to point it at directory which contains the data.
      
 If you use Windows, a pre-compiled executable using pyinstaller is available 
 
-Action Autobuild (latest version) [here](https://nightly.link/edwardsmith999/pyDataView/workflows/main/master/pyDataView.exe.zip)
-Stable download [here](https://e1.pcloud.link/publink/show?code=XZng4FZRzqlM9Xu9m5rjfsHqeWmYYcaWnj7) (Built 23/12/21)
+ - Action Autobuild (latest version) [here](https://nightly.link/edwardsmith999/pyDataView/workflows/main/master/pyDataView.exe.zip)
+ - Stable download [here](https://e1.pcloud.link/publink/show?code=XZng4FZRzqlM9Xu9m5rjfsHqeWmYYcaWnj7) (Built 23/12/21)
 
 pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
 Currently, support is provided for field data written by a number of binary format MPI/Fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. 
