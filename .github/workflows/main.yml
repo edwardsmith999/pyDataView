@@ -16,10 +16,8 @@ jobs:
 
     - name: Package Application
       uses: JackMcKew/pyinstaller-action-windows@main
-      with:
-        path: postproclib
 
     - uses: actions/upload-artifact@v2
       with:
         name: pyDataView.exe
-        path: postproclib/dist/windows
+        path: dist/windows
