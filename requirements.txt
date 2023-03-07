@@ -1,6 +1,6 @@
 h5py==2.10.0
 matplotlib==3.1.2
-numpy==1.18.1
+numpy==1.22.0
 scipy==1.4.1
 setuptools==39.0.1
 skimage==0.0
