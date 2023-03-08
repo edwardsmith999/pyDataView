@@ -10,7 +10,7 @@ from pathlib import Path
 this_directory = Path(__file__).parent
 long_description = (this_directory / "README.md").read_text()
 
-setup( name = "pyDataViewer",
+setup( name = "pyDataView",
        version = "2.0.2",
        author = ["Edward Smith"],
        author_email = "edward.smith@brunel.ac.uk",
