@@ -112,13 +112,8 @@ jobs:
 
       - name: Build executable using Pyinstaller
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
             pyinstaller pyDataView.spec
-            ls -l dist/
-          elif [ "$RUNNER_OS" == "macOS" ]; then
-            pyinstaller --windowed pyDataView.spec
-          fi
-            
+            ls -l dist/           
 
       - name: Save generated executable file as an artifact
         uses: actions/upload-artifact@v2
