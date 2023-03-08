@@ -9,7 +9,7 @@ on:
 jobs:
 
   build-pyPI:
-    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    name: Build and publish to PyPI
     runs-on: ubuntu-latest
     
     steps:
@@ -18,16 +18,16 @@ jobs:
       uses: actions/setup-python@v3
       with:
         python-version: "3.9"
-        
+                
     - name: Install setuptools
       run: 
         python -m pip install --upgrade pip setuptools wheel
-        
+
     - name: Build an sdist
       run: 
         python setup.py sdist
         
-    - name: Publish distribution 📦 to PyPI
+    - name: Publish distribution to PyPI
       uses: pypa/gh-action-pypi-publish@release/v1
       with:
         password: ${{ secrets.PYPI_API_TOKEN }}
@@ -48,3 +48,73 @@ jobs:
       with:
         name: pyDataView.exe
         path: dist/windows
+        
+  build-mac-linux:
+    runs-on: ${{ matrix.os }}
+
+    strategy:
+      matrix:
+        os: [macos-latest, ubuntu-18.04, ubuntu-20.04]
+
+    env:
+      PYTHON_VERSION: 3.9
+
+    steps:
+
+    - name: Downgrade Python to 3.8  # wxPython 3.9 not available on Ubuntu 20.04 yet
+      if: matrix.os == 'ubuntu-20.04'
+      run: echo "PYTHON_VERSION=3.8" >> $GITHUB_ENV
+
+    - name: Diagnostic report env
+      run: |
+        echo "PYTHON_VERSION is ${{ env.PYTHON_VERSION }} aka $PYTHON_VERSION"
+        echo "$RUNNER_OS"
+        echo "${{ matrix.os }}"
+        if [ "$RUNNER_OS" == "Linux" ]; then    # report linux distro version
+          lsb_release -a 
+        fi
+
+    - uses: actions/checkout@v2
+
+    - name: Setup Python
+      uses: actions/setup-python@v2
+      with:
+        python-version: ${{ env.PYTHON_VERSION }}
+
+    - name: Install dependencies
+      run: |
+        python -m pip install --upgrade pip
+        pip install wheel
+
+        if [ "$RUNNER_OS" == "Linux" ]; then
+          pip install -U -f https://extras.wxpython.org/wxPython4/extras/linux/gtk3/${{ matrix.os }} wxPython
+          sudo apt-get install libsdl2-mixer-2.0-0 libsdl2-image-2.0-0 libsdl2-2.0-0
+
+        elif [ "$RUNNER_OS" == "macOS" ]; then
+          pip install wxpython
+
+        else
+            echo "$RUNNER_OS not supported"
+            exit 1
+        fi
+
+        pip install numpy matplotlib scipy vispy
+        pip install pyinstaller
+
+    - name: Run Python and print version_info
+      run: |
+        python -c "import sys; print(sys.version_info)"
+        uname -a
+
+    - name: Build executable using Pyinstaller
+      run: |
+        pyinstaller pyDataView.spec
+        ls -l dist/
+
+    - name: Save generated executable file as an artifact
+      uses: actions/upload-artifact@v2
+      with:
+        # The act of downloading zips up the artifact and adds the .zip to the downloaded file
+        name: pyDataView-${{ matrix.os }}
+        path: dist/
+
