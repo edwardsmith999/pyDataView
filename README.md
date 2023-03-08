@@ -15,12 +15,52 @@ The emphasis of this project is the provision of a simple reader to get data int
 
 ## Quickstart
 
-On linux, you need Python3, numpy, wxpython and matplotlib installed. You can then clone the repository and run pyDataView from the command line,
+### Clone the repository
+
+On linux, you need Python3, numpy, scipy, wxpython, matplotlib and vispy installed. You can then clone the repository and run pyDataView from the command line,
 
      python3 pyDataView.py -d ./path/to/dir 
      
 Choosing the path to point it at directory which contains the data. 
+
+### Install using pip
+
+A version is available from the Python [package manager](https://pypi.org/project/pyDataView/) with a command of the form,
+
+    pip install pyDataView
+
+This should create an entry point so you can use the GUI with a command of the form
+
+    pyDataView
+    
+You can also use the entire library of data reading functions in Python scripts, e.g.
+
+```python
+import postproclib as ppl
+
+fdir = "/path/to/directory/with/data/"
+PPObj = ppl.All_PostProc(fdir)
+print(PPObj)
+```
+
+which will print any data found in the directory. The dataformats can be ouput from molecular dynamics simulations such as [Flowmol](https://github.com/edwardsmith999/flowmol) or [LAMMPS](https://www.lammps.org/) as well as CFD codes such as [OpenFOAM](https://openfoam.org/) or [ChannelFlow](http://channelflow.org/). The found data will be listed as a Dictonary of plottypes which can be plotted as follows,
+
+```python
+#Get plotting object
+plotObj = PPObj.plotlist['mbins']
+
+#Get profile
+x, y = plotObj.profile(axis=normal, 
+      startrec=startrec, 
+      endrec=endrec)
+
+#Plot only normal component
+fig, ax = plt.subplots(1,1)
+ax.plot(x,y[:,component])
+plt.show()
+```
      
+### Prebuilt Binaries
 If you use Windows, a pre-compiled executable using pyinstaller is available 
 
  - Action Autobuild (latest version) [here](https://nightly.link/edwardsmith999/pyDataView/workflows/main/master/pyDataView.exe.zip)
