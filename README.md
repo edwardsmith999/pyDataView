@@ -15,28 +15,71 @@ The emphasis of this project is the provision of a simple reader to get data int
 
 ## Quickstart
 
-On linux, you need Python3, numpy, wxpython and matplotlib installed. You can then clone the repository and run pyDataView from the command line,
+### Clone the repository
+
+On linux, you need Python3, numpy, scipy, wxpython, matplotlib and vispy installed. You can then clone the repository and run pyDataView from the command line,
 
      python3 pyDataView.py -d ./path/to/dir 
      
 Choosing the path to point it at directory which contains the data. 
-     
+
+### Install using pip
+
+A version is available from the Python [package manager](https://pypi.org/project/pyDataView/) with a command of the form,
+
+    pip install pyDataView
+
+This should create an entry point so you can use the GUI with a command of the form
+
+    pyDataView
+    
+Any files which can be converted to fields are displayed on the left hand side.
+
+![alt tag](https://raw.githubusercontent.com/edwardsmith999/pyDataView/master/pyDataView_screenshot.png)
+   
+You can also use the entire library of data reading functions in Python scripts, e.g.
+
+```python
+import postproclib as ppl
+
+fdir = "/path/to/directory/with/data/"
+PPObj = ppl.All_PostProc(fdir)
+print(PPObj)
+```
+
+which will print any data found in the directory. The dataformats can be ouput from molecular dynamics simulations such as [Flowmol](https://github.com/edwardsmith999/flowmol) (binary format MPI/Fortran) or [LAMMPS](https://www.lammps.org/) (ascii format) as well as CFD codes such as [OpenFOAM](https://openfoam.org/) (uniform grids only) or [ChannelFlow](http://channelflow.org/) (h5 format). The found data will be listed as a Dictonary of plottypes which can be plotted as follows,
+
+```python
+#Get plotting object
+plotObj = PPObj.plotlist['mbins']
+
+#Get profile
+x, y = plotObj.profile(axis=normal, 
+      startrec=startrec, 
+      endrec=endrec)
+
+#Plot only normal component
+fig, ax = plt.subplots(1,1)
+ax.plot(x,y[:,component])
+plt.show()
+```
+
+If the code/datatype is already supported, all available data should be displayed.
+`pyDataView` uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
+
+As well as the raw data fields, derived fields are also supported, for example, dividing momentum by density to get velocity.
+    
+### Prebuilt Binaries
 If you use Windows, a pre-compiled executable using pyinstaller is available 
 
  - Action Autobuild (latest version) [here](https://nightly.link/edwardsmith999/pyDataView/workflows/main/master/pyDataView.exe.zip)
  - Stable download [here](https://e1.pcloud.link/publink/show?code=XZng4FZRzqlM9Xu9m5rjfsHqeWmYYcaWnj7) (Built 23/12/21)
 
-pyDataView uses fields of five dimensional data: three spatial, one temporal and one for dimensionality of data.
-Currently, support is provided for field data written by a number of binary format MPI/Fortran codes, OpenFOAM, Channelflow (h5 format) and LAMMPS. 
-    
-or you can run `pyDataView.py` and choosing the directory.
-Any files which can be converted to fields are displayed on the left hand side.
 
-![alt tag](https://raw.githubusercontent.com/edwardsmith999/pyDataView/master/pyDataView_screenshot.png)
+## Adding new readers
 
-As well as the raw data fields, derived fields are also supported, for example, dividing momentum by density to get velocity.
+One of the main aims of pyDataView is to make it easy to add new readers. 
 
-If the code/datatype is already supported, all available data should be displayed.
 In order to add new datatypes, the user must create a raw data reader in `newreader.py`,
 
 ```python
