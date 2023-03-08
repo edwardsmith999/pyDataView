@@ -54,7 +54,8 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        os: [macos-latest, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
+        os: [macos-latest]
+        #, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
         #exclude:
         #  - os: macos-latest
@@ -111,8 +112,13 @@ jobs:
 
       - name: Build executable using Pyinstaller
         run: |
-          pyinstaller pyDataView.spec
-          ls -l dist/
+          if [ "$RUNNER_OS" == "Linux" ]; then
+            pyinstaller pyDataView.spec
+            ls -l dist/
+          elif [ "$RUNNER_OS" == "macOS" ]; then
+            pyinstaller --windowed pyDataView.spec
+          fi
+            
 
       - name: Save generated executable file as an artifact
         uses: actions/upload-artifact@v2
