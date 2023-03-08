@@ -1,4 +1,4 @@
-name: Package Application with Pyinstaller
+name: Package Application with Pyinstaller for Windows and pypi
 
 on:
   push:
@@ -7,14 +7,39 @@ on:
     branches: [ master ]
 
 jobs:
-  build:
+
+  build-pyPI:
+    name: Build and publish Python 🐍 distributions 📦 to PyPI and TestPyPI
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@master
+    - name: Set up Python 3.6
+      uses: actions/setup-python@v3
+      with:
+        python-version: "3.6"
+        
+    - name: Install setuptools
+      run: >-
+        python -U -m pip install --upgrade pip setuptools wheel
+        
+    - name: Build an sdist
+      run: >-
+        python setup.py sdist
+        
+    - name: Publish distribution 📦 to PyPI
+      uses: pypa/gh-action-pypi-publish@release/v1
+      with:
+        password: ${{ secrets.PYPI_API_TOKEN }}
+        
+  build-Windows-exe:
 
     runs-on: ubuntu-latest
-
+    
     steps:
     - uses: actions/checkout@v2
 
-    - name: Package Application
+    - name: Package Application for Windows
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
         path: ./
