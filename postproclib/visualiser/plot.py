@@ -260,7 +260,7 @@ try:
             self.SetAutoLayout(True)
             self.SetSizer(box)
 
-        def CreatePlot(self, data, cdata, connect=None, griddata=False):
+        def CreatePlot(self, data, cdata, sizes, connect=None, griddata=False):
 
             # build visuals
             Mols3D = scene.visuals.create_visual_node(visuals.LinePlotVisual)
@@ -277,10 +277,10 @@ try:
             self.p1.set_gl_state('translucent', blend=True, depth_test=True)
             if data.shape[0] > 100000:
                 self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, 
-                                 marker_size=2., width=2, connect=connect)
+                                 marker_size=sizes/10., width=2, connect=connect)
             else:
                 self.p1.set_data(data, face_color=cdata, edge_color=[0.,0.,0.,self.alpha], 
-                                 marker_size=5., color=cdata ,width=5, connect=connect)
+                                 marker_size=sizes, color=cdata ,width=5, connect=connect)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):
@@ -292,14 +292,14 @@ try:
             self.canvas.show()
             self.plotexists = True
 
-        def set_data(self, data, cdata, connect=None, griddata=False):
+        def set_data(self, data, cdata, sizes, connect=None, griddata=False):
 
             if data.shape[0] > 100000:
                 self.p1.set_data(data, face_color=cdata, edge_width=0., edge_color=None, 
-                                 marker_size=2., width=2, connect=connect)
+                                 marker_size=sizes/10., width=2, connect=connect)
             else:
                 self.p1.set_data(data, face_color=cdata, edge_color=[0.,0.,0.,self.alpha],
-                                 marker_size=5., color=cdata, width=5, connect=connect)
+                                 marker_size=sizes, color=cdata, width=5, connect=connect)
 
             #Add a GRID
             if isinstance(griddata, np.ndarray):
@@ -307,10 +307,38 @@ try:
 
             self.canvas.update()
 
+        def get_vispy_sizes(self, vmdr, scalefact=5):
+            moltypes = vmdr.read_moltype() 
+            #Using actual scales based on sigma
+#            typeDict = {b"Ar":1.0, b"S":1.2,
+#                        b"W":1.0, b"CM":1.0, 
+#                        b"EO":1.0, b"T":4.5012/2.9016, 
+#                        b"EM":4.022/2.9016, b"OA":3.69/2.9016, 
+#                        b"W1":1.0, 
+#                        b"M":4.1840/2.9016}
+            #Making chains much bigger
+            typeDict = {b"Ar":1.0, b"S":1.2,
+                        b"W":1.0,  b"W1":1.0,
+                        b"CM":3.0, b"EO":3.0, 
+                        b"T":3.0,  b"EM":3.0, 
+                        b"OA":3.0, b"M":3.0}
+
+            sizes= np.ones(vmdr.n)
+            molno = 0; 
+            for moltype in moltypes:
+                try:
+                    sizes[molno] = typeDict[moltype]
+                except KeyError:
+                    pass
+                if (molno == vmdr.n-1):
+                    break
+                molno += 1
+
+            return sizes*scalefact
+
         def get_vispy_colours(self, vmdr, component):
 
             c = vmdr.labels[component]
-            print("get_vispy_colours", c)
             colours = np.ones([vmdr.n, 4])
             if (c is "White"):
                 pass
@@ -321,12 +349,19 @@ try:
             elif (c is "moltype"):
                 moltypes = vmdr.read_moltype() 
                 typeDict = {b"Ar":[1., 0., 0.], b"S":[1.,1.,1.],
-                            b"W":[1., 1., 1.], b"CM":[0., 0., 1.], b"EO":[0., 1., 1.]}
+                            b"W":[0.8, 0.8, 1.0], b"CM":[0., 0., 1.], 
+                            b"EO":[0., 1., 1.], b"T":[0.0, 0.0, 1.0], 
+                            b"EM":[1., 0.75, 0.75], b"OA":[1.0, 0.0, 0.0], 
+                            b"W1":[0.8, 0.8, 1.0], 
+                            b"M":[0.0, 1.0, 1.0]}
                 molno = 0
                 for moltype in moltypes:
                     #Convert tag name to colour
                     try:
                         colours[molno,:3] = typeDict[moltype]
+#                        if moltype == b"W1":
+#                            colours[molno,3] = 0.1
+#                        else:
                         colours[molno,3] = self.alpha
                     except KeyError:
                         colours[molno,:3] = self.cmap(float(hash(moltype) % 256) / 256)[:3]

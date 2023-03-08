@@ -610,7 +610,8 @@ class VisualiserPanel(wx.Panel):
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
         self.mol.colours = self.vispyp.get_vispy_colours(self.mol, self.component)   
-        self.mol.chains = self.mol.read_chains()
+        self.mol.chains = self.mol.read_chains(self.mol.pos[:,:,self.rec])
+        self.mol.sizes = self.vispyp.get_vispy_sizes(self.mol)
 
         if (os.path.exists(self.gridfile)):
             x,y,z = read_grid(self.rec, filename=self.gridfile, 
@@ -620,21 +621,25 @@ class VisualiserPanel(wx.Panel):
             griddata = False
         if (not self.vispyp.plotexists): 
             self.vispyp.CreatePlot(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                   sizes=self.mol.sizes,
                                    connect=self.mol.chains, griddata=griddata)
         else:
             self.update_md()
 
     def update_md(self):
-
+        #Need to reload chains to avoid periodic wrap around
+        self.mol.chains = self.mol.read_chains(self.mol.pos[:,:,self.rec])
         if self.mol.pos.shape[2] >=  self.rec:
             if (os.path.exists(self.gridfile)):
                 x,y,z = read_grid(self.rec, filename=self.gridfile, 
                                 ny=int(self.header.nbins2), nz=int(self.header.nbins3))
                 griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
                 self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                   sizes=self.mol.sizes, 
                                    connect=self.mol.chains, griddata=griddata)
             else:
                 self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, 
+                                     sizes=self.mol.sizes,  
                                      connect=self.mol.chains)
 
     def FieldPanelOnOff(self, switchon):
