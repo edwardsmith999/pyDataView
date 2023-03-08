@@ -50,26 +50,17 @@ jobs:
         path: dist/windows
         
   build-mac-linux:
-    runs-on: ${{ matrix.os }}
-
-    #strategy:
-    #  matrix:
-    #    os: [macos-latest, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
-    #    version: [3.9, 3.10, 3.11]
-    #env:
-    #  PYTHON_VERSION: 3.9
-      
+     
     strategy:
+      fail-fast: false
       matrix:
         os: [macos-latest, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
         python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
         #exclude:
         #  - os: macos-latest
         #    python-version: '3.8'
-
-    #- name: Downgrade Python to 3.8  # wxPython 3.9 not available on Ubuntu 20.04 yet
-    #  if: matrix.os == 'ubuntu-20.04'
-    #  run: echo "PYTHON_VERSION=3.8" >> $GITHUB_ENV
+        
+    runs-on: ${{ matrix.os }}
     
     steps:
       - uses: actions/checkout@v3
@@ -82,9 +73,8 @@ jobs:
                
       - name: Diagnostic report env
         run: |
-          echo "PYTHON_VERSION is ${{ env.PYTHON_VERSION }} aka $PYTHON_VERSION"
-          echo "$RUNNER_OS"
-          echo "${{ matrix.os }}"
+          echo "PYTHON_VERSION is ${{ matrix.python-version }} on OS ${{ matrix.os }}"
+          echo "Github variable RUNNER_OS=$RUNNER_OS"
           if [ "$RUNNER_OS" == "Linux" ]; then    # report linux distro version
             lsb_release -a 
           fi
