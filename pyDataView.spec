@@ -50,4 +50,13 @@ exe = EXE(pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None )
+          entitlements_file=None)
+
+app = BUNDLE(exe,
+             name='pyDataView.app',
+             icon='logo.icns',
+             info_plist={
+                'NSHighResolutionCapable': 'True',
+                'NSRequiresAquaSystemAppearance': 'No'
+             },             
+             bundle_identifier=None)
