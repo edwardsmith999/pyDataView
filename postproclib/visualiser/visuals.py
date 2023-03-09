@@ -8,6 +8,8 @@ from .plot import PyplotPanel
 from .plot import VispyPanel
 from .choosefield import FieldChooserPanel
 from .sliders import RecordSliderPanel
+from .minispinctrl import EVT_MINISPIN
+
 
 from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
 from postproclib.allpostproc import All_PostProc  
@@ -175,9 +177,9 @@ class VisualiserPanel(wx.Panel):
         self.Bind(wx.EVT_TEXT_ENTER, self.handle_bintxt,
                   self.slidersp.binslider.slidertext)
 
-        self.Bind(wx.EVT_SPINCTRL, self.handle_recspin,
+        self.Bind(EVT_MINISPIN, self.handle_recspin,
                   self.slidersp.recslider.spin)
-        self.Bind(wx.EVT_SPINCTRL, self.handle_binspin,
+        self.Bind(EVT_MINISPIN, self.handle_binspin,
                   self.slidersp.binslider.spin)
 
         self.Bind(wx.EVT_CHECKBOX, self.handle_autoscale, 
