@@ -56,8 +56,8 @@ jobs:
       fail-fast: false
       matrix:
         #os: [macos-latest, macos-11,  macos-10.15]
-        os: [macos-latest, ubuntu-18.04, ubuntu-20.04, ubuntu-22.04]
-        python-version: ['3.7', '3.8', '3.9', '3.10', '3.11']
+        os: [macos-latest, ubuntu-18.04]#, ubuntu-20.04, ubuntu-22.04]
+        python-version: ['3.7']#, '3.8', '3.9', '3.10', '3.11']
         #exclude:
         #  - os: macos-latest
         #    python-version: '3.8'
@@ -94,6 +94,7 @@ jobs:
 
           elif [ "$RUNNER_OS" == "macOS" ]; then
             pip install wxpython
+            pip install vispy
 
           else
               echo "$RUNNER_OS not supported"
@@ -117,7 +118,12 @@ jobs:
             pyinstaller pyDataView.spec
             ls -l dist/           
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            pyinstaller pyDataView_apple.spec
+            #pyinstaller --windowed --hidden-import=vispy.ext._bundled.six \ 
+            #                       --hidden-import=vispy.app.backends._wx \ 
+            #                       --add-data=/path/to/vispy.glsl
+            #                       --add-data=/path/to/vispy.io_data
+            #                       pyDataView.py
+            pyinstaller --windowed  pyDataView.py
           else
               echo "$RUNNER_OS not supported"
               exit 1
