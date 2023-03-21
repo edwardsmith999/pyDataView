@@ -114,20 +114,21 @@ jobs:
 
       - name: Build executable using Pyinstaller
         run: |
-          if [ "$RUNNER_OS" == "Linux" ]; then
-            pyinstaller pyDataView.spec
-            ls -l dist/           
-          elif [ "$RUNNER_OS" == "macOS" ]; then
+          pyinstaller pyDataView.spec
+          #if [ "$RUNNER_OS" == "Linux" ]; then
+          #  pyinstaller pyDataView.spec
+          #  ls -l dist/           
+          #elif [ "$RUNNER_OS" == "macOS" ]; then
             #pyinstaller --windowed --hidden-import=vispy.ext._bundled.six \ 
             #                       --hidden-import=vispy.app.backends._wx \ 
             #                       --add-data=/path/to/vispy.glsl
             #                       --add-data=/path/to/vispy.io_data
             #                       pyDataView.py
-            pyinstaller --windowed  pyDataView.py
-          else
-              echo "$RUNNER_OS not supported"
-              exit 1
-          fi
+          #  pyinstaller --windowed  pyDataView.py
+          #else
+          #    echo "$RUNNER_OS not supported"
+          #    exit 1
+          #fi
 
 
       - name: Save generated executable file as an artifact
