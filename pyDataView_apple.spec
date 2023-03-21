@@ -6,15 +6,15 @@ import os
 
 block_cipher = None
 
-data_files = [
-    (os.path.dirname(vispy.glsl.__file__), os.path.join("vispy", "glsl")),
-    (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data"))
-]
+#data_files = [
+#    (os.path.dirname(vispy.glsl.__file__), os.path.join("vispy", "glsl")),
+#    (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data"))
+#]
 
 a = Analysis( ['pyDataView.py'],
     pathex=[],
     binaries=[],
-    datas=data_files,
+    datas=[],
     hiddenimports=[],
     hookspath=[],
     runtime_hooks=[],
