@@ -13,10 +13,13 @@ data_files = [
     (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data"))
 ]
 
-hidden_imports = [
-    "vispy.ext._bundled.six",
-    "vispy.app.backends._wx",    
-]
+if is_darwin:
+    hidden_imports = []
+else:
+    hidden_imports = [
+        "vispy.ext._bundled.six",
+        "vispy.app.backends._wx",    
+    ]
 
 a = Analysis(['pyDataView.py'],
              pathex=[],
