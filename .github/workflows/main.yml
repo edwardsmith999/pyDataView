@@ -57,7 +57,7 @@ jobs:
       matrix:
         #os: [macos-latest, macos-11,  macos-10.15]
         os: [macos-latest, ubuntu-18.04]#, ubuntu-20.04, ubuntu-22.04]
-        python-version: ['3.7']#, '3.8', '3.9', '3.10', '3.11']
+        python-version: ['3.8']#, '3.8', '3.9', '3.10', '3.11']
         #exclude:
         #  - os: macos-latest
         #    python-version: '3.8'
@@ -118,7 +118,8 @@ jobs:
             pyinstaller pyDataView.spec
             ls -l dist/           
           elif [ "$RUNNER_OS" == "macOS" ]; then
-            pyinstaller pyDataView_apple.spec
+            pyinstaller --windowed pyDataView.py
+            pyinstaller -y pyDataView_apple.spec
           else
               echo "$RUNNER_OS not supported"
               exit 1
