@@ -6,27 +6,26 @@ from setuptools import setup, find_packages
 from codecs import open
 from os import path
 
-here = path.abspath(path.dirname(__file__))
+from pathlib import Path
+this_directory = Path(__file__).parent
+long_description = (this_directory / "README.md").read_text()
 
-# Get the long description from the README file
-with open(path.join(here, 'README.md'), encoding='utf-8') as f:
-    long_description = f.read()
-
-setup( name = "pyDataViewer",
-       version = "1.0",
-       author = ["Edward Smith","David Trevelyan"],
-       author_email = "edward.smith05@imperial.ac.uk",
+setup( name = "pyDataView",
+       version = "2.0.2",
+       author = ["Edward Smith"],
+       author_email = "edward.smith@brunel.ac.uk",
        url = "https://github.com/edwardsmith999/pyDataView",
        classifiers=['Development Status :: 3 - Alpha',
-                     'Programming Language :: Python :: 2.7'],
+                     'Programming Language :: Python :: 3.6'],
        packages=find_packages(exclude=['contrib', 'docs', 'tests']),
        keywords='visualisation scientific data',
        license = "GPL",
-       install_requires=['numpy', 'scipy', 'matplotlib', 'wxpython'],
+       install_requires=['numpy', 'scipy', 'matplotlib', 'wxpython', 'vispy', ],
        extras_require = {'Channelflow_plots':  ["h5py"], 
-                         'cpl_plots':["skimage"]},
+                         'cpl_plots':["scikit-image"]},
        description = "Data Viewer GUI written in python, wxpython and matplotlib",
        long_description = long_description,
+       long_description_content_type='text/markdown',
        entry_points={
             'console_scripts': [
                 'pyDataView=pyDataView:main',

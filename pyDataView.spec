@@ -13,10 +13,13 @@ data_files = [
     (os.path.join(os.path.dirname(vispy.io.__file__), "_data"), os.path.join("vispy", "io", "_data"))
 ]
 
-hidden_imports = [
-    "vispy.ext._bundled.six",
-    "vispy.app.backends._wx",    
-]
+if is_darwin:
+    hidden_imports = []
+else:
+    hidden_imports = [
+        "vispy.ext._bundled.six",
+        "vispy.app.backends._wx",    
+    ]
 
 a = Analysis(['pyDataView.py'],
              pathex=[],
@@ -24,7 +27,6 @@ a = Analysis(['pyDataView.py'],
              datas=data_files,
              hiddenimports=hidden_imports,
              hookspath=[],
-             hooksconfig={},
              runtime_hooks=[],
              excludes=[],
              win_no_prefer_redirects=False,
@@ -51,4 +53,13 @@ exe = EXE(pyz,
           disable_windowed_traceback=False,
           target_arch=None,
           codesign_identity=None,
-          entitlements_file=None )
+          entitlements_file=None)
+
+app = BUNDLE(exe,
+             name='pyDataView.app',
+             icon='logo.icns',
+             info_plist={
+                'NSHighResolutionCapable': 'True',
+                'NSRequiresAquaSystemAppearance': 'No'
+             },             
+             bundle_identifier=None)

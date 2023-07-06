@@ -572,6 +572,10 @@ class OpenFOAM_RawData(RawData):
                         odata[:,:,:,plusrec,:] = vtemp[0,:]
                     elif vtemp.shape[0] == 0:
                         odata[:,:,:,plusrec,:] = 0.
+                    elif vtemp.shape[0] == self.npercell:
+                        for dim in range(self.npercell):
+                            odata[:,:,:,plusrec,dim] = float(vtemp[dim])
+
                     else:
                         odata[:,:,:,plusrec,:] = self.reshape_list_to_cells(vtemp, self.npercell)
                 elif (type(vtemp) == float):
@@ -667,7 +671,7 @@ class OpenFOAM_RawData(RawData):
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
                 with open(fpath,'r') as fobj:
-                    vlist = self.read_list_named_entry(fobj, 'internalField')
+                    vlist = self.read_list_named_entry(fobj, 'boundaryField')
                     if len(vlist) is self.npercell:
                         for dim in range(self.npercell):
                             odata[:,:,:,plusrec,dim] = float(vlist[dim])

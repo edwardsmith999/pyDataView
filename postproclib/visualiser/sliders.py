@@ -1,5 +1,6 @@
 import wx
 import numpy as np
+from .minispinctrl import MiniSpinCtrl
 
 class SliderPlusWidth(wx.Panel):
     
@@ -12,7 +13,9 @@ class SliderPlusWidth(wx.Panel):
         self.slider = JumpSlider(self)
         #self.slider = wx.Slider(self)
         spintext = wx.StaticText(self,-1,label="\u00B1",size=(10,-1))
-        self.spin = wx.SpinCtrl(self,value='0',initial=0, size=(-1,-1))
+        #self.spin = wx.SpinCtrl(self,value='0',initial=0, size=(-1,-1))
+        #A spin control which avoids the massive GTK3 buttons
+        self.spin = MiniSpinCtrl(self, initial=0, size=(30,-1))
 
         hbox = wx.BoxSizer(wx.HORIZONTAL)
         hbox.Add(sliderlabel,0,wx.ALIGN_CENTER_VERTICAL | wx.LEFT, 10)
