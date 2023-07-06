@@ -120,11 +120,15 @@ class CPL_PostProc(PostProc):
                                                          mddir=resultsdirs[MDkey],
                                                          cfddir=resultsdirs[CFDkey])
 
-                except AssertionError:
+                except AssertionError as e:
+                    print(e)
                     pass
-                except DataNotAvailable:
+                except DataNotAvailable as e:
+                    print(e)
                     pass
-                except IOError:
+                except IOError as e:
+                    print(e)
                     pass
-                except TypeError:
+                except TypeError as e:
+                    print(e)
                     pass
