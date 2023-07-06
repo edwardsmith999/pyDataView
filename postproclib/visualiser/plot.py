@@ -70,23 +70,23 @@ class PyplotPanel(wx.Panel):
             self.lines.append(line)
 
         # Maximum and minimum grid values
-        maxval = np.max([np.max(ax) for ax in axs])
-        minval = np.min([np.min(ax) for ax in axs])
+        maxval = np.max([np.max(ax) for ax in axs[:3]])
+        minval = np.min([np.min(ax) for ax in axs[:3]])
         self.ax.set_xlim(minval,maxval)
 
         if (xlabel): self.ax.set_xlabel(xlabel)
         if (ylabel): self.ax.set_ylabel(ylabel)
         self.canvas.draw()
    
+    def update_plot(self, ax, data):
+        plt.setp(self.lines, xdata=ax, ydata=data)
+        self.canvas.draw()
+
     def update_plot_many(self, axs, datas):
         for line, ax, data in zip(self.lines, axs, datas):
             plt.setp(line, xdata=ax, ydata=data)
         self.canvas.draw() 
     
-    def update_plot(self, ax, data):
-        plt.setp(self.lines, xdata=ax, ydata=data)
-        self.canvas.draw()
-
     def set_plot_limits(self,lims):
         self.ax.set_ylim(lims[0], lims[1])
         self.canvas.draw()

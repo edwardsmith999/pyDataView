@@ -465,6 +465,7 @@ class OpenFOAM_RawData(RawData):
 
         records = []
         for filename in os.listdir(fdir):
+            #print("get_reclist", filename, fdir, os.listdir(fdir))
             try:
                 rectime = float(filename)
                 records.append(filename)
