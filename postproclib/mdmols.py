@@ -150,13 +150,8 @@ class VMDReader:
     def __init__(self, fdir, fname="newest"):
 
         self.fdir = fdir
-        #self.n, self.nprocs = self.read_header()
-        self.header = MDHeaderData(fdir)
-        self.n = int(self.header.globalnp)
-        self.nprocs = int(self.header.npx)*int(self.header.npy)*int(self.header.npz)
-        self.Lxyz = np.array([float(self.header.globaldomain1),
-                              float(self.header.globaldomain2),
-                              float(self.header.globaldomain3)])
+        self.read_header()
+
         self.labels = ["White", "Red", "tag", "moltype"]
         #Either take whichever file has been created most recently
         if fname is "newest":
@@ -168,7 +163,32 @@ class VMDReader:
         else:
             raise IOError("fname", fname, " is not recognised in VMDReader") 
 
-#    def read_header(self, headername="/simulation_header"):
+    def read_header(self):
+
+        #This is for Flowmol
+        #to get n, nprocs and Lxyz from log.lammps
+        try:
+            self.header = MDHeaderData(self.fdir)
+            self.n = int(self.header.globalnp)
+            self.nprocs = int(self.header.npx)*int(self.header.npy)*int(self.header.npz)
+            self.Lxyz = np.array([float(self.header.globaldomain1),
+                                  float(self.header.globaldomain2),
+                                  float(self.header.globaldomain3)])
+        except FileNotFoundError:
+            #Try LAMMPS version
+            logfile = self.fdir + "lammps/log.lammps"
+            numbers = []
+            with open(logfile, 'r') as f:
+                for line in f:
+                    if "Created" in line and "atoms" in line:
+                        print(line) 
+                        words = line.split()
+                        for word in words:
+                            if word.isdigit():
+                                numbers.append(int(word))
+            self.n = np.sum(numbers)
+            self.nprocs = 1
+        
 
 #        #Load number of molecules data
 #        fname = self.fdir + headername
@@ -727,9 +747,16 @@ class MolAllPostProc(PostProc):
         self.fieldfiles1 = list(set(self.fields_present) & set(self.potentialfiles))
 
         try:
-            Header1 = MDHeaderData(self.resultsdir)
+            #Flowmol header format
+            self.header = MDHeaderData(resultsdir)
+            self.nx = self.header.nbins1
+            self.ny = self.header.nbins2
+            self.nz = self.header.nbins3
         except IOError:
-            raise NoResultsInDir
+            self.nx = 1
+            self.ny = 1
+            self.nz = 1
+            #raise NoResultsInDir
 
         if 'final_state' in (self.fieldfiles1):
             fs = final_state(resultsdir, "./final_state")

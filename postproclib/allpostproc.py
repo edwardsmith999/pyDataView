@@ -18,6 +18,14 @@ class All_PostProc:
             fdir = './'
 
         self.plotlist = {}
+
+        try:
+            CPL_PP = CPL_PostProc(fdir)
+            self.plotlist.update(CPL_PP.plotlist)
+            print(CPL_PP)
+        except NoResultsInDir:
+            pass
+
         try:
             MD_PP = MD_PostProc(fdir)
             self.plotlist.update(MD_PP.plotlist)
@@ -57,13 +65,6 @@ class All_PostProc:
             OF_PP = OpenFOAM_PostProc(fdir)
             self.plotlist.update(OF_PP.plotlist)
             print(OF_PP)
-        except NoResultsInDir:
-            pass
-
-        try:
-            CPL_PP = CPL_PostProc(fdir)
-            self.plotlist.update(CPL_PP.plotlist)
-            print(CPL_PP)
         except NoResultsInDir:
             pass
 

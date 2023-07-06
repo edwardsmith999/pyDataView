@@ -13,7 +13,8 @@ from postproclib.pplexceptions import DataNotAvailable, NoResultsInDir
 from postproclib.allpostproc import All_PostProc  
 from postproclib.headerdata import MDHeaderData
 from postproclib.mdmols import MolAllPostProc, read_grid
-from postproclib import PostProc  
+from postproclib import PostProc
+import postproclib as ppl
 from misclib import unicodetolatex, round_to_n
 
 DummyEvent = wx.lib.newevent.NewEvent()
@@ -42,7 +43,6 @@ class VisualiserPanel(wx.Panel):
 
         try:
             self.MM = MolAllPostProc(self.fdir)
-            self.header = MDHeaderData(self.fdir)
         except NoResultsInDir:
             self.MM = PostProc()
             self.MM.plotlist = {"Empty":[]}
@@ -131,8 +131,12 @@ class VisualiserPanel(wx.Panel):
         self.slidersp.binslider.SetValue(self.bin)
         self.slidersp.recslider.SetValue(self.rec)
 
-        self.redraw = self.redraw_plot
-        self.update = self.update_plot
+        if (type(self.field).__bases__[0] == ppl.cplfields.CPLField):
+            self.redraw = self.redraw_cpl_plot
+            self.update = self.update_cpl_plot
+        else:
+            self.redraw = self.redraw_plot
+            self.update = self.update_plot
         self.set_limits = self.set_plot_limits
         self.toggle_binslider("Off")
         self.redraw()
@@ -255,8 +259,13 @@ class VisualiserPanel(wx.Panel):
         savebuttons = [self.choosep.save_d, self.choosep.save_b, self.choosep.save_s]
         if plottype == 'Profile':
             self.SwitchPanels("matplotlib")
-            self.redraw = self.redraw_plot
-            self.update = self.update_plot
+            print(type(self.field))
+            if (type(self.field).__bases__[0] == ppl.cplfields.CPLField):
+                self.redraw = self.redraw_cpl_plot
+                self.update = self.update_cpl_plot
+            else:
+                self.redraw = self.redraw_plot
+                self.update = self.update_plot
             self.set_limits = self.set_plot_limits
             self.toggle_binslider("Off")
             for b in savebuttons:
@@ -325,6 +334,14 @@ class VisualiserPanel(wx.Panel):
             self.field = self.PP.plotlist[ftype]
             self.fieldname = ftype
 
+        if self.plottype == 'Profile':
+            if (type(self.field).__bases__[0] == ppl.cplfields.CPLField):
+                self.redraw = self.redraw_cpl_plot
+                self.update = self.update_cpl_plot
+            else:
+                self.redraw = self.redraw_plot
+                self.update = self.update_plot
+
         self.labels = self.field.labels
         self.update_components()
         self.update_normals(self.normal)
@@ -347,9 +364,9 @@ class VisualiserPanel(wx.Panel):
         else:
             mtype = overide_event_str
 
-        print(self.MM.plotlist[mtype], self.mol, self.mol == self.MM.plotlist[mtype])
         #No Molecule data found, raise warning
         if (self.MM.plotlist[mtype] == []):
+            print(self.MM.plotlist[mtype], self.mol, self.mol == self.MM.plotlist[mtype])
             showMessageDlg("No Molecular data found. Should be format vmd_out.dcd, vmd_temp.dcd, " + 
                            "final_state, initial_state, etc", title='Information')
             return
@@ -605,8 +622,6 @@ class VisualiserPanel(wx.Panel):
         #read anyway to get it, better to read in constructor
         #pos = self.vispyp.vmdr.read_pos(self.rec,self.rec+1)
 
-        self.header = MDHeaderData(self.fdir)
-
         #Redraw creates canvas
         self.mol.pos = self.mol.read_pos(0, self.mol.maxrec)
         self.mol.colours = self.vispyp.get_vispy_colours(self.mol, self.component)   
@@ -615,7 +630,7 @@ class VisualiserPanel(wx.Panel):
 
         if (os.path.exists(self.gridfile)):
             x,y,z = read_grid(self.rec, filename=self.gridfile, 
-                              ny=int(self.header.nbins2), nz=int(self.header.nbins3))
+                              ny=int(self.MM.ny), nz=int(self.MM.nz))
             griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
         else:
             griddata = False
@@ -632,7 +647,7 @@ class VisualiserPanel(wx.Panel):
         if self.mol.pos.shape[2] >=  self.rec:
             if (os.path.exists(self.gridfile)):
                 x,y,z = read_grid(self.rec, filename=self.gridfile, 
-                                ny=int(self.header.nbins2), nz=int(self.header.nbins3))
+                                ny=int(self.MM.ny), nz=int(self.MM.nz))
                 griddata = np.c_[x.ravel(), y.ravel(), z.ravel()]
                 self.vispyp.set_data(self.mol.pos[:,:,self.rec], self.mol.colours, 
                                    sizes=self.mol.sizes, 

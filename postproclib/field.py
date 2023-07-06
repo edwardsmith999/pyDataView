@@ -80,11 +80,11 @@ class Field():
         """
 
         # Read 4D time series from startrec to endrec
-        grid_data = self.read(startrec,endrec,**kwargs)
+        grid_data = self.read(startrec, endrec, **kwargs)
            
         # Average over axes
         if (avgaxes != ()):
-            grid_data = np.mean(grid_data,axis=avgaxes) 
+            grid_data = np.mean(grid_data, axis=avgaxes) 
 
         #return avg_data
         return grid_data 
@@ -104,7 +104,7 @@ class Field():
         if (endrec==None): 
             endrec = self.maxrec
 
-        data = self.averaged_data(startrec,endrec,avgaxes=avgaxes,**kwargs)
+        data = self.averaged_data(startrec, endrec, avgaxes=avgaxes, **kwargs)
         # Need version 1.7.1 of numpy or higher
         X, Y = np.meshgrid(self.grid[axes[0]],self.grid[axes[1]],indexing='ij')
         return X, Y, data 
