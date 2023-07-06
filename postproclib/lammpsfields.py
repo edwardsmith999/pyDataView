@@ -5,7 +5,7 @@ from .lammpsrawdata import LAMMPS_RawData
 
 class LAMMPSField(Field):
 
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname='3dgrid'):
         self.fname = fname
         Raw = LAMMPS_RawData(fdir, self.fname, self.readnames)
         self.nperbin = Raw.nperbin  
@@ -33,29 +33,24 @@ class LAMMPS_complexField(LAMMPSField):
 # Simple fields
 
 class LAMMPS_pField(LAMMPSField):
-    #fname = 'cplchunk'
     readnames = ['vx', 'vy', 'vz']
     labels = readnames
 
 
 class LAMMPS_mField(LAMMPSField):
-    #fname = 'cplchunk'
     readnames = ['Ncount']
     labels = readnames
 
 
 class LAMMPS_TField(LAMMPSField):
-    #fname = 'cplchunk'
     readnames = ['temp']
     labels = readnames
 
 class LAMMPS_PressureField(LAMMPSField):
-    #fname = 'cplchunk'
     readnames = ['c_Pressure[1]', 'c_Pressure[2]', 'c_Pressure[3]']
     labels = readnames
 
 class LAMMPS_ShearStressField(LAMMPSField):
-    #fname = 'cplchunk'
     readnames = ['c_Pressure[4]', 'c_Pressure[5]', 'c_Pressure[6]']
     labels = readnames
 
@@ -72,7 +67,7 @@ class LAMMPS_PotentialEnergyField(LAMMPSField):
 # Complex fields
 class LAMMPS_dField(LAMMPS_complexField):
 
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname='3dgrid'):
         self.nField = LAMMPS_mField(fdir, fname)
         Field.__init__(self, self.nField.Raw)
         self.inherit_parameters(self.nField)
@@ -110,7 +105,7 @@ class LAMMPS_dField(LAMMPS_complexField):
 #Velocity field
 class LAMMPS_vField(LAMMPS_complexField):
 
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname='3dgrid'):
         self.mField = LAMMPS_mField(fdir, fname)
         self.pField = LAMMPS_pField(fdir, fname)
         Field.__init__(self, self.pField.Raw)
@@ -147,7 +142,7 @@ class LAMMPS_vField(LAMMPS_complexField):
 # Momentum density field
 class LAMMPS_momField(LAMMPS_complexField):
     
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname='3dgrid'):
         self.pField = LAMMPS_pField(fdir, fname)
         Field.__init__(self,self.pField.Raw)
         self.inherit_parameters(self.pField)
@@ -189,7 +184,7 @@ class LAMMPS_momField(LAMMPS_complexField):
 # Total Energy field
 class LAMMPS_TotalEnergyField(LAMMPS_complexField):
     
-    def __init__(self, fdir, fname):
+    def __init__(self, fdir, fname='3dgrid'):
         self.KEField = LAMMPS_KineticEnergyField(fdir, fname)
         self.PEField = LAMMPS_PotentialEnergyField(fdir, fname)
         Field.__init__(self, self.KEField.Raw)
