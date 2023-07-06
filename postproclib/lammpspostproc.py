@@ -39,14 +39,24 @@ class LAMMPS_PostProc(PostProc):
                 n = "3dgrid"
                 for l in f:
                     if ("chunk/atom bin/3d") in l:
-                       n=l.split()[1]
-                    if n in l and "ave/chunk" in l:
-                       indx = l.find("file")
-                       if indx != -1:
-                           fname = l[indx:].split()[1]
-                       else:
-                           print(("logfile ", logfile, " appears to be corrupted " + 
-                                 "so cannot determine output filename"))
+                        if ("cfdbccompute" in l):
+                            continue
+                        nl = next(f)
+                        if "ave/chunk" in nl:
+                            indx = nl.find("file")
+                            if indx != -1:
+                                fname = nl[indx:].split()[1]
+                            else:
+                                print(("logfile ", logfile, " appears to be corrupted " + 
+                                     "so cannot determine output filename"))
+#                       n=l.split()[1]
+#                    if n in l and "ave/chunk" in l:
+#                       indx = l.find("file")
+#                       if indx != -1:
+#                           fname = l[indx:].split()[1]
+#                       else:
+#                           print(("logfile ", logfile, " appears to be corrupted " + 
+#                                 "so cannot determine output filename"))
         else:
             pass
             #print("logfile ", logfile, " not found")
@@ -60,9 +70,9 @@ class LAMMPS_PostProc(PostProc):
         self.plotlist = {}
         if os.path.exists(fname):
             for key, field in list(possibles.items()): 
-                print(key, field, self.resultsdir)
+                print(key, field, self.resultsdir, fname)
                 try:
-                    self.plotlist[key] = field(self.resultsdir, fname)
+                    self.plotlist[key] = field(self.resultsdir, fname.replace("lammps/",""))
                 except IOError:
                     pass
                 except ValueError:
