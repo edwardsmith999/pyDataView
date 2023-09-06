@@ -1,0 +1,60 @@
+
+proc newrep {molid repname} {
+	
+    mol addrep $molid 
+    set repid [expr [molinfo $molid get numreps] - 1] 
+    set repname [mol repname $molid $repid] 
+
+	return $repid
+}
+
+proc delrep {molid repname} {
+
+  set repid [mol repindex $molid $repname] 
+  mol delrep $repid $molid 
+
+}
+
+#Default molecule colours
+set W_colour 15
+set S_colour 1
+set A_colour 15
+set r_colour 15
+
+#Molecule sizes based on base scale and set using size ratios
+set scale 0.6
+set W_size [expr 0.8584*$scale]
+set S_size [expr 1.1*$scale]
+set A_size [expr 1.*$scale]
+set r_size [expr 1.*$scale]
+
+#LOAD POLYMER MOLECULES
+mol new {./vmd_out.psf} type {psf} first 0 last -1 step 1 waitfor all
+mol addfile {./vmd_out.dcd} type {dcd} first 0 last -1 step 1 waitfor all top
+
+mol selection type W
+set repW [newrep top repW]
+mol modstyle $repW top CPK $W_size 0.000000 10.000000 10.000000
+mol modmaterial $repW top Transparent
+
+mol selection type S
+set repS [newrep top repS]
+mol modstyle $repS top CPK $S_size 0.000000 10.000000 10.000000
+mol modmaterial $repS top AOChalky
+
+mol selection type A
+set repA [newrep top repA]
+mol modstyle $repA top CPK $A_size 0.000000 10.000000 10.000000
+mol modmaterial $repA top Transparent
+
+
+mol selection type r
+set repr [newrep top repr]
+mol modstyle $repr top CPK $r_size 0.000000 10.000000 10.000000
+mol modmaterial $repr top AOChalky
+
+#Set default color for types
+color Name W $W_colour
+color Name S $S_colour
+color Name A $A_colour
+color Name r $r_colour
