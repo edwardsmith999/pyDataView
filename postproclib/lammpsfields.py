@@ -41,6 +41,13 @@ class LAMMPS_mField(LAMMPSField):
     readnames = ['Ncount']
     labels = readnames
 
+class LAMMPS_mSurfField(LAMMPSField):
+    readnames = ['c_mSurf']
+    labels = readnames
+
+class LAMMPS_mWaterField(LAMMPSField):
+    readnames = ['c_mWater']
+    labels = readnames
 
 class LAMMPS_TField(LAMMPSField):
     readnames = ['temp']

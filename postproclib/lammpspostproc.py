@@ -19,6 +19,8 @@ class LAMMPS_PostProc(PostProc):
 
         possibles = {'vsum': LAMMPS_pField,
                      'nsum': LAMMPS_mField,
+                     'mSurf': LAMMPS_mSurfField,
+                     'mWater': LAMMPS_mWaterField,
                      'Density': LAMMPS_dField,
                      'Velocity': LAMMPS_vField,
                      'Momentum': LAMMPS_momField,
