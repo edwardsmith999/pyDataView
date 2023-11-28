@@ -33,7 +33,7 @@ class CPLField(Field):
         self.md_field = self.MDFieldType(fdir+mddir, **kwargs)
         try:
             self.cfd_field = self.CFDFieldType(fdir+cfddir, parallel_run=True)
-        except TypeError:
+        except (TypeError, FileNotFoundError):
             self.cfd_field = self.CFDFieldType(fdir+cfddir)
         self.cfd_halos = self.cfd_field.nhalos
         self.olap_cells = np.array(

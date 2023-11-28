@@ -200,10 +200,14 @@ class OpenFOAM_RawData(RawData):
 
     def read_list_from_here(self, fobj_list, kwl):
 
-        nitems = int(fobj_list[kwl+1])
+        try:
+            nitems = int(fobj_list[kwl+1])
+        except ValueError:
+            return []
+
         checkopenbracket = fobj_list[kwl+2]
         if (checkopenbracket[0] != '('):
-            raise 
+            return [] 
 
         herelist = []
         for lineno in range(nitems):
@@ -219,7 +223,7 @@ class OpenFOAM_RawData(RawData):
 
         checkclosebracket = fobj_list[kwl+4+lineno]
         if (checkclosebracket[0] != ')'):
-            raise
+            return []
 
         return herelist
 
@@ -671,14 +675,16 @@ class OpenFOAM_RawData(RawData):
             else:
                 fpath = self.fdir + self.reclist[startrec+plusrec] + self.fname
                 with open(fpath,'r') as fobj:
-                    vlist = self.read_list_named_entry(fobj, 'boundaryField')
+                    vlist = self.read_list_named_entry(fobj, haloname)
                     if len(vlist) is self.npercell:
                         for dim in range(self.npercell):
                             odata[:,:,:,plusrec,dim] = float(vlist[dim])
                     elif len(vlist) == 0:
                         odata[:,:,:,plusrec,:] = 0.
                     else:
-                        vtemp = self.reshape_list_to_cells(vlist, self.npercell)
+                        nx = int(self.ncx)
+                        nz = int(self.ncz)
+                        vtemp = np.reshape(vlist, (nx, 1, nz, self.npercell), order='F')
                         odata[:,0:1,:,plusrec,:] = vtemp
 
             return odata
