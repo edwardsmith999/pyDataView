@@ -24,3 +24,6 @@ from .openfoampostproc import *
 
 from .lammpsfields import *
 from .lammpspostproc import *
+
+from .VTKfields import *
+from .VTKpostproc import *
