@@ -19,7 +19,7 @@ class VTK_PostProc(PostProc):
             print(("Directory " +  self.resultsdir + " not found"))
             raise IOError
 
-        files = glob.glob(resultsdir+"/*")
+        files = glob.glob(resultsdir+"/*.vtr")
         fnames = set([f.replace(resultsdir,"").replace("/","").split(".")[0] 
                      for f in files])
         
