@@ -9,7 +9,7 @@ class LAMMPS_PostProc(PostProc):
         Post processing class for LAMMPS runs
     """
 
-    def __init__(self,resultsdir,**kwargs):
+    def __init__(self,resultsdir, **kwargs):
         self.resultsdir = resultsdir
 
         # Check directory exists before trying to instantiate object
@@ -47,7 +47,7 @@ class LAMMPS_PostProc(PostProc):
                         if "ave/chunk" in nl:
                             indx = nl.find("file")
                             if indx != -1:
-                                fname = nl[indx:].split()[1]
+                                fname = nl[indx:].split("/")[-1].split()[0]
                             else:
                                 print(("logfile ", logfile, " appears to be corrupted " + 
                                      "so cannot determine output filename"))
@@ -68,13 +68,11 @@ class LAMMPS_PostProc(PostProc):
             print("fname not defined, trying 3dgrid")
             fname = "3dgrid"
 
-
         self.plotlist = {}
-        if os.path.exists(fname):
+        if os.path.exists(self.resultsdir + fname):
             for key, field in list(possibles.items()): 
-                print(key, field, self.resultsdir, fname)
                 try:
-                    self.plotlist[key] = field(self.resultsdir, fname.replace("lammps/",""))
+                    self.plotlist[key] = field(self.resultsdir, fname)
                 except IOError:
                     pass
                 except ValueError:
