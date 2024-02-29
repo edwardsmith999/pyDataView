@@ -1735,7 +1735,7 @@ class MD_scalarPCVField(MD_complexField):
              verbose=False, **kwargs):
 
         Pfield = self.PField.read(startrec, endrec, **kwargs)
-        return (Pfield[...,[0]]+Pfield[...,[5]]+Pfield[...,[8]])/3.
+        return (Pfield[...,[0]]+Pfield[...,[4]]+Pfield[...,[8]])/3.
         
 #    def averaged_data(self, startrec, endrec, 
 #                      avgaxes=(), peculiar=None, **kwargs):
