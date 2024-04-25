@@ -39,7 +39,11 @@ jobs:
     
     steps:
     - uses: actions/checkout@v2
-
+    - name: Set up Python
+      uses: actions/setup-python@v4
+      with:
+        python-version: 3.9
+        
     - name: Package Application for Windows
       uses: JackMcKew/pyinstaller-action-windows@main
       with:
