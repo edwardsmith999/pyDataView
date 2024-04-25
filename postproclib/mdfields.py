@@ -920,7 +920,7 @@ class MD_rhoEnergyField(MD_complexField):
         Edata = np.divide(Edata,float(self.plotfreq))
 
         # Energy (no streaming consideration)
-        Eout = np.divide(Eout, gridvolumes)
+        Edata = np.divide(Edata, gridvolumes)
 
         # Remove average of streaming component
         if peculiar == None:
@@ -929,7 +929,7 @@ class MD_rhoEnergyField(MD_complexField):
         if (peculiar):
             quit('Peculiar not developed for MD_rhoEnergyField')
 
-        return Eout 
+        return Edata 
 
     def averaged_data(self, startrec, endrec, avgaxes=(),
                       binlimits=None, peculiar=None, **kwargs):
@@ -1312,8 +1312,8 @@ class MD_polyconcField(MD_complexField):
 
     def read(self, startrec, endrec, binlimits=None, **kwargs):
 
-        mpoly = self.mpolyField.read(startrec, endrec, binlimits=binlimits)
-        msolv = self.msolvField.read(startrec, endrec, binlimits=binlimits)
+        mpoly = self.mpolyField.read(startrec, endrec, binlimits=binlimits, **kwargs)
+        msolv = self.msolvField.read(startrec, endrec, binlimits=binlimits, **kwargs)
         mtotal = mpoly + msolv
         
         return np.divide(mpoly,mtotal)
@@ -1321,9 +1321,11 @@ class MD_polyconcField(MD_complexField):
     def averaged_data(self, startrec, endrec, avgaxes=(), binlimits=None, **kwargs):
 
         mpoly = self.mpolyField.averaged_data(startrec, endrec, 
-                                              avgaxes=avgaxes, binlimits=binlimits)
+                                              avgaxes=avgaxes,
+                                              binlimits=binlimits, **kwargs)
         msolv = self.msolvField.averaged_data(startrec, endrec, 
-                                              avgaxes=avgaxes, binlimits=binlimits)
+                                              avgaxes=avgaxes,
+                                              binlimits=binlimits, **kwargs)
         mtotal = mpoly + msolv
         
         return np.divide(mpoly,mtotal)
@@ -1529,7 +1531,7 @@ class MD_vFieldatsurface(MD_complexField):
 
 class MD_rhouuCVField(MD_complexField):
 
-    def __init__(self, fdir, velocity_loc="surfaceinterp"):
+    def __init__(self, fdir, velocity_loc="centre"):
 
         self.velocity_loc = velocity_loc
 
@@ -1735,7 +1737,7 @@ class MD_scalarPCVField(MD_complexField):
              verbose=False, **kwargs):
 
         Pfield = self.PField.read(startrec, endrec, **kwargs)
-        return (Pfield[...,[0]]+Pfield[...,[5]]+Pfield[...,[8]])/3.
+        return (Pfield[...,[0]]+Pfield[...,[4]]+Pfield[...,[8]])/3.
         
 #    def averaged_data(self, startrec, endrec, 
 #                      avgaxes=(), peculiar=None, **kwargs):
@@ -1779,7 +1781,7 @@ class MD_eFieldatsurface(MD_complexField):
 
 class MD_rhouECVField(MD_complexField):
 
-    def __init__(self, fdir, velocity_loc="surfaceinterp"):
+    def __init__(self, fdir, velocity_loc="centre"):
 
         self.velocity_loc = velocity_loc
 
@@ -1827,7 +1829,7 @@ class MD_rhouECVField(MD_complexField):
 
 class MD_CVStressheat_Field(MD_complexField):
 
-    def __init__(self, fdir, peculiar=True, velocity_loc="surfaceinterp"):
+    def __init__(self, fdir, peculiar=True, velocity_loc="centre"):
 
         self.fdir = fdir
         self.velocity_loc = velocity_loc
