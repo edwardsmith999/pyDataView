@@ -7,8 +7,12 @@ from .cplpostproc import CPL_PostProc
 from .channelflowpostproc import channelflow_PostProc
 from .openfoampostproc import OpenFOAM_PostProc
 from .serial_cfdpostproc import Serial_CFD_PostProc
-from .VTKpostproc import VTK_PostProc
 from .pplexceptions import NoResultsInDir
+try:
+    from .VTKpostproc import VTK_PostProc
+    vispyfound = True
+except ImportError:
+    vispyfound = False
 
 class All_PostProc:
     
@@ -24,6 +28,8 @@ class All_PostProc:
             CPL_PP = CPL_PostProc(fdir)
             self.plotlist.update(CPL_PP.plotlist)
             print(CPL_PP)
+            print("Coupled case, only plotting coupled field")
+            return
         except NoResultsInDir:
             pass
 
@@ -69,12 +75,13 @@ class All_PostProc:
         except NoResultsInDir:
             pass
 
-        try:
-            VTK_PP = VTK_PostProc(fdir)
-            self.plotlist.update(VTK_PP.plotlist)
-            print(VTK_PP)
-        except NoResultsInDir:
-            pass
+        if vispyfound:
+            try:
+                VTK_PP = VTK_PostProc(fdir)
+                self.plotlist.update(VTK_PP.plotlist)
+                print(VTK_PP)
+            except NoResultsInDir:
+                pass
 
         if (len(self.plotlist) == 0):
             raise NoResultsInDir
