@@ -45,7 +45,8 @@ class LAMMPS_PostProc(PostProc):
                             continue
                         nl = next(f)
                         if "ave/chunk" in nl:
-                            indx = nl.find("file")
+                            #Take index not include word file
+                            indx = nl.find("file")+4
                             if indx != -1:
                                 fname = nl[indx:].split("/")[-1].split()[0]
                             else:
