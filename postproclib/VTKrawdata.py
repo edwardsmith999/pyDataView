@@ -82,7 +82,9 @@ class VTK_RawData(RawData):
         
         #Read any file as grid should be the same
         fdata = pv.read(self.filelist[0])
-        gnbins  = (fdata.extent[1], fdata.extent[3], fdata.extent[5])
+        #gnbins  = (fdata.extent[1], fdata.extent[3], fdata.extent[5])
+        gnbins  = (fdata.x.shape[0]-1, fdata.y.shape[0]-1, fdata.z.shape[0]-1)
+
         self.domain = [fdata.x[-1], fdata.y[-1], fdata.z[-1]]
 
         binspaces = [0.5*(fdata.x[:-1] + fdata.x[1:]), 
