@@ -176,7 +176,13 @@ class VMDReader:
                                   float(self.header.globaldomain3)])
         except FileNotFoundError:
             #Try LAMMPS version
-            logfile = self.fdir + "lammps/log.lammps"
+            if os.path.isfile(self.fdir + "lammps/log.lammps"):
+                logfile = self.fdir + "lammps/log.lammps"
+            elif os.path.isfile(self.fdir + "log.lammps"):
+                logfile = self.fdir + "log.lammps"
+            else:
+                raise IOError("log.lammps not found in " + self.fdir) 
+
             numbers = []
             with open(logfile, 'r') as f:
                 for line in f:
