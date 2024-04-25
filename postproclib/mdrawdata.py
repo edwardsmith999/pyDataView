@@ -253,6 +253,33 @@ class MD_RawData(RawData):
         recitems = np.product(self.nbins)*self.nperbin
         bindata  = np.empty(int(nrecs*recitems))
 
+        #Ideally we'd have a memory map which defers reads to when they are
+        #needed. The problem is how to handle multiple files
+        #It seem dask would be a solution to concat these per file
+        #bindata = np.memmap(fobj, dtype=self.dtype, mode='r', 
+        #                     shape=(self.nbins[0],
+        #                       self.nbins[1],
+        #                       self.nbins[2],
+        #                       self.nperbin ,
+        #                       nrecs ),
+        #                      order='F'))
+
+        #Solution using dask causes OSError: [Errno 24] Too many open files 
+        #a = da.from_array(np.memmap(fobj, dtype="d",  mode="r", 
+        #          shape=(self.nbins[0],
+        #                self.nbins[1],
+        #                self.nbins[2],
+        #                1),  order='F'))
+        #for plusrec in range(0,nrecs):
+        #   filepath = self.fdir+self.fname+'.'+"%07d"%(startrec+plusrec)
+        #   s = da.from_array(filepath, dtype="d",  mode="r", 
+        #          shape=(self.nbins[0],
+        #                self.nbins[1],
+        #                self.nbins[2],
+        #                1),order='F'))
+        #   a = da.concatenate([a, s],axis=3) 
+
+
         # Check whether the records are written separately
         # If so
         if (self.separate_outfiles):
@@ -285,6 +312,19 @@ class MD_RawData(RawData):
                     skiprecs.append(plusrec)
                 else:
                     try:
+                        #Using dask stack with memmap would work like istart:iend I think
+                        #da.stack(np.memmap(fobj, dtype=self.dtype, mode='r'))
+                        #Followed by a reshape at the end (or using axis in concatenate).
+                        #da.concatenate(np.memmap(fobj, dtype=self.dtype, mode='r', 
+        #                     shape=(self.nbins[0],
+        #                       self.nbins[1],
+        #                       self.nbins[2],
+        #                       self.nperbin ,
+        #                       nrecs ),
+        #                      order='F')), axis=4)
+                        #Another option is to memmap and assign to location in array 
+                        #but I think this loads the data anyway
+                        #bindata[istart:iend] = np.memmap(fobj, dtype=self.dtype, mode='r')#np.fromfile(fobj,dtype=self.dtype)
                         bindata[istart:iend] = np.fromfile(fobj,dtype=self.dtype)
                     except ValueError:
                         raise
