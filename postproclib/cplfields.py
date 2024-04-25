@@ -31,10 +31,11 @@ class CPLField(Field):
         self.cfddir = cfddir
         self.header = HeaderData(open(fdir+cpldir+'coupler_header')) 
         self.md_field = self.MDFieldType(fdir+mddir, **kwargs)
-        try:
-            self.cfd_field = self.CFDFieldType(fdir+cfddir, parallel_run=True)
-        except (TypeError, FileNotFoundError):
-            self.cfd_field = self.CFDFieldType(fdir+cfddir)
+        self.cfd_field = self.CFDFieldType(fdir+cfddir)
+        #try:
+        #    self.cfd_field = self.CFDFieldType(fdir+cfddir, parallel_run=True)
+        #except (TypeError, FileNotFoundError):
+        #    self.cfd_field = self.CFDFieldType(fdir+cfddir)
         self.cfd_halos = self.cfd_field.nhalos
         self.olap_cells = np.array(
             [int(self.header.icmax_olap) - int(self.header.icmin_olap) + 1,

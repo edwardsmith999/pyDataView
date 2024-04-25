@@ -4,6 +4,16 @@ from .postproc import PostProc
 from .pplexceptions import NoResultsInDir 
 import glob
 
+def walklevel(some_dir, level=1):
+    some_dir = some_dir.rstrip(os.path.sep)
+    assert os.path.isdir(some_dir)
+    num_sep = some_dir.count(os.path.sep)
+    for root, dirs, files in os.walk(some_dir):
+        yield root, dirs, files
+        num_sep_this = root.count(os.path.sep)
+        if num_sep + level <= num_sep_this:
+            del dirs[:]
+
 class OpenFOAM_PostProc(PostProc):
 
     """ 
@@ -43,7 +53,9 @@ class OpenFOAM_PostProc(PostProc):
         controlDictfound = False
         #possibles = []
         writecontrol =''
-        for root, dirs, files in os.walk(self.resultsdir):
+        #Use walklevel to prevent finding other openfoam results
+        #which might be in the same directory
+        for root, dirs, files in walklevel(self.resultsdir, 2):
             if ("controlDict" in files):
                 controlDictfound = True
                 with open(root+"/controlDict") as f:
@@ -69,8 +81,26 @@ class OpenFOAM_PostProc(PostProc):
                             print(("Convert failed in OpenFOAM_reader", line))
 
             if "processor" in root and not parallel_run:
-                parallel_run = True
-                print(("Assuming parallel run as processor folder found in " + self.resultsdir))
+                #Check if at least two processor folders
+                if (os.path.isdir(root+'/../processor0') and os.path.isdir(root+'/../processor1')):
+                    print("Assuming parallel run as processor0, processor1, etc found in " 
+                           + self.resultsdir + ".\n")
+                    parallel_run = True
+                else:
+                    # Check number of folders in processor0 folder as on older versions of OpenFOAM
+                    # this is filled in a one processor parallel run but not on later ones
+                    rmlist = ["constant", "system", "processor0"]
+                    try:
+                        rc = next(os.walk(root+'/../'))[1]
+                        pc = next(os.walk(root))[1]
+                        rootcontents = [i for i in rc if i not in rmlist]
+                        proccontents = [i for i in pc if i not in rmlist] 
+                        if len(proccontents) > len(rootcontents):
+                            parallel_run = True
+                            print("Assuming parallel run as processor folder found in " 
+                                   + self.resultsdir + " with " + str(len(proccontents)) + " in.\n")
+                    except StopIteration:
+                        pass                        
 
         #Check if data files exist
         if not controlDictfound:
