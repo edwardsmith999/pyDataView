@@ -1,4 +1,4 @@
-name: Package Application with Pyinstaller for Windows and pypi
+name: Package application with Pyinstaller for Windows and pypi
 
 on:
   push:
