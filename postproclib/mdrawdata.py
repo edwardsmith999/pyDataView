@@ -250,7 +250,7 @@ class MD_RawData(RawData):
         nrecs = endrec - startrec + 1 
         # Allocate enough memory in the C library to efficiently insert
         # into bindata
-        recitems = np.product(self.nbins)*self.nperbin
+        recitems = np.prod(self.nbins)*self.nperbin
         bindata  = np.empty(int(nrecs*recitems))
 
         #Ideally we'd have a memory map which defers reads to when they are
